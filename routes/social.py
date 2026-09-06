@@ -283,6 +283,14 @@ def read_notification(notif_id):
         # they got mail (: takes them right to the chat
         sender_name = notif.message.split(" ")[0]
         return redirect(url_for("messages.conversation", username=sender_name))
+    elif notif.type in ["roadmap_submission", "roadmap_status", "roadmap_comment"]:
+        import re
+        match = re.search(r"'([^']+)'", notif.message)
+        if match:
+            from models.game import Game
+            game_obj = Game.query.filter_by(title=match.group(1)).first()
+            if game_obj:
+                return redirect(url_for('roadmap.game_roadmap', game_id=game_obj.id))
 
     return redirect(url_for("profile", username=current_user.username))
 

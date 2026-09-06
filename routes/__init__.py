@@ -7,6 +7,7 @@ from routes.library import library_bp
 from routes.social import social_bp
 from routes.developer import developer_bp
 from routes.messages import messages_bp
+from routes.roadmap import roadmap_bp
 
 
 def register_blueprints(app):
@@ -18,6 +19,7 @@ def register_blueprints(app):
     app.register_blueprint(social_bp)
     app.register_blueprint(developer_bp)
     app.register_blueprint(messages_bp)
+    app.register_blueprint(roadmap_bp)
 
     # Register legacy endpoint aliases for backward compatibility with templates and JS
     for rule in list(app.url_map.iter_rules()):

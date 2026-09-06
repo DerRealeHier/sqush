@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ game.title }} - Roadmap & Feature Voting</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/style.css') }}">
+    <style>
+        :root {
+            --ink: #0d0d0d;
+            --paper: #161616;
+            --paper-card: #1f1f23;
+            --yellow: #ffe14d;
+            --red: #ff3b30;
+            --blue: #3aa0ff;
+            --green: #33d17a;
+            --purple: #bb86fc;
+            --orange: #ff9f1c;
+        }
+
+        body {
+            background-color: var(--ink);
+            background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1.5px, transparent 1.5px);
+            background-size: 14px 14px;
+            color: #fff;
+            font-family: 'Comic Neue', sans-serif;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, h4, h5, .comic-font {
+            font-family: 'Bangers', 'Comic Neue', sans-serif;
+            letter-spacing: 1px;
+        }
+
+        /* Comic panels & frames */
+        .comic-panel {
+            background: var(--paper);
+            border: 4px solid #000;
+            box-shadow: 8px 8px 0 #000;
+            position: relative;
+        }
+
+        .comic-modal-content {
+            background: #18181c;
+            border: 4px solid #000;
+            box-shadow: 10px 10px 0 #000;
+            border-radius: 0;
+            color: #fff;
+        }
+
+        .comic-input {
+            background: #222228 !important;
+            border: 3px solid #000 !important;
+            border-radius: 0 !important;
+            color: #fff !important;
+            font-weight: 700;
+            box-shadow: 3px 3px 0 #000;
+        }
+
+        .comic-input:focus {
+            border-color: var(--yellow) !important;
+            box-shadow: 3px 3px 0 var(--yellow) !important;
+        }
+
+        /* Header / Hero */
+        .roadmap-header {
+            padding: 24px;
+            margin-bottom: 28px;
+            background: #1a1a1f;
+        }
+
+        .game-thumb {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0 #000;
+        }
+
+        /* Kanban Column Layout */
+        .kanban-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 991px) {
+            .kanban-board {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .kanban-column {
+            background: #151518;
+            border: 4px solid #000;
+            box-shadow: 6px 6px 0 #000;
+            display: flex;
+            flex-direction: column;
+            min-height: 550px;
+            position: relative;
+        }
+
+        .kanban-column-header {
+            padding: 16px 20px;
+            border-bottom: 4px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .col-planned .kanban-column-header {
+            background: #2a2a35;
+            color: var(--blue);
+        }
+
+        .col-in_progress .kanban-column-header {
+            background: #362a15;
+            color: var(--yellow);
+        }
+
+        .col-done .kanban-column-header {
+            background: #173322;
+            color: var(--green);
+        }
+
+        .column-badge {
+            font-family: 'Bangers', sans-serif;
+            font-size: 1.2rem;
+            padding: 4px 12px;
+            border: 2px solid #000;
+            box-shadow: 2px 2px 0 #000;
+            background: #000;
+            color: #fff;
+        }
+
+        .kanban-card-list {
+            padding: 16px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-height: 250px;
+            transition: background 0.15s ease;
+        }
+
+        .kanban-card-list.drag-over {
+            background: rgba(255, 225, 77, 0.08);
+            outline: 3px dashed var(--yellow);
+        }
+
+        /* Kanban Cards */
+        .roadmap-card {
+            background: var(--paper-card);
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0 #000;
+            padding: 16px;
+            cursor: pointer;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            position: relative;
+        }
+
+        .roadmap-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 #000;
+        }
+
+        .roadmap-card.dragging {
+            opacity: 0.45;
+            transform: scale(0.97);
+        }
+
+        .card-top-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .badge-tag {
+            font-family: 'Bangers', sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            padding: 3px 8px;
+            border: 2px solid #000;
+            box-shadow: 2px 2px 0 #000;
+            text-transform: uppercase;
+            font-weight: normal;
+        }
+
+        .badge-feature { background: var(--yellow); color: #000; }
+        .badge-bug { background: var(--red); color: #fff; }
+        .badge-improvement { background: var(--purple); color: #000; }
+        .badge-dev { background: #000; color: var(--yellow); border-color: var(--yellow); }
+        .badge-community { background: #2f2f38; color: #fff; }
+
+        /* Upvote Button */
+        .upvote-btn {
+            background: #282830;
+            color: #fff;
+            border: 2px solid #000;
+            box-shadow: 3px 3px 0 #000;
+            font-family: 'Bangers', sans-serif;
+            font-size: 1.15rem;
+            padding: 4px 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            user-select: none;
+        }
+
+        .upvote-btn:hover {
+            background: #393945;
+            color: var(--yellow);
+            transform: translate(-1px, -1px);
+        }
+
+        .upvote-btn.voted {
+            background: var(--yellow);
+            color: #000;
+            box-shadow: 3px 3px 0 #000;
+        }
+
+        .upvote-btn.voted i {
+            color: #000;
+        }
+
+        /* Filter buttons */
+        .filter-btn {
+            background: #1f1f23;
+            color: #ccc;
+            border: 2px solid #000;
+            box-shadow: 3px 3px 0 #000;
+            font-family: 'Bangers', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+            padding: 6px 14px;
+            text-decoration: none;
+            transition: all 0.1s ease;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--yellow);
+            color: #000;
+            transform: translate(-1px, -1px);
+        }
+
+        /* Dev Controls on Card */
+        .card-dev-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 2px dashed #333;
+        }
+
+        .btn-dev-quick {
+            background: #25252b;
+            color: #fff;
+            border: 2px solid #000;
+            box-shadow: 2px 2px 0 #000;
+            font-family: 'Bangers', sans-serif;
+            font-size: 0.85rem;
+            padding: 3px 8px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .btn-dev-quick:hover {
+            transform: translate(-1px, -1px);
+            color: #000;
+        }
+
+        .btn-dev-quick.move-planned:hover { background: var(--blue); }
+        .btn-dev-quick.move-progress:hover { background: var(--yellow); }
+        .btn-dev-quick.move-done:hover { background: var(--green); }
+
+        /* Comment items */
+        .comment-item {
+            background: #1c1c21;
+            border: 2px solid #000;
+            box-shadow: 3px 3px 0 #000;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .comment-author-badge {
+            font-family: 'Bangers', sans-serif;
+            font-size: 0.85rem;
+            background: var(--yellow);
+            color: #000;
+            padding: 1px 6px;
+            border: 1px solid #000;
+        }
+
+        /* Empty state */
+        .empty-column-box {
+            text-align: center;
+            padding: 40px 16px;
+            color: #666;
+            font-style: italic;
+            border: 2px dashed #2a2a30;
+            margin: auto 0;
+        }
+
+        /* Toast notification */
+        .roadmap-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1060;
+            background: var(--yellow);
+            color: #000;
+            border: 3px solid #000;
+            box-shadow: 6px 6px 0 #000;
+            font-family: 'Bangers', sans-serif;
+            font-size: 1.25rem;
+            letter-spacing: 0.5px;
+            padding: 12px 24px;
+            display: none;
+            animation: slideUp 0.2s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation Bar -->
+<nav class="container p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div class="d-flex align-items-center flex-wrap gap-2">
+        <a href="{{ url_for('home') }}" class="NavBar">HOME</a>
+        <a href="{{ url_for('store_front') }}" class="NavBar">STORE</a>
+        <a href="/community" class="NavBar">COMMUNITY</a>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('library') }}" class="NavBar">LIBRARY</a>
+        {% endif %}
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <!-- Cart Icon Button -->
+        <a href="/cart" class="hud-icon-btn position-relative" title="Cart">
+            <i class="bi bi-cart-fill"></i>
+            <span class="hud-count-badge cart-count-badge {% if cart_count == 0 %}d-none{% endif %}">{{ cart_count }}</span>
+        </a>
+        {% if current_user.is_authenticated %}
+        <!-- Messages Icon Button -->
+        <a href="{{ url_for('messages.inbox') }}" class="hud-icon-btn position-relative" title="Messages">
+            <i class="bi bi-chat-dots-fill"></i>
+            {% if unread_messages_count > 0 %}
+            <span class="hud-count-badge">{{ unread_messages_count }}</span>
+            {% endif %}
+        </a>
+        <!-- Settings Icon Button -->
+        <a href="{{ url_for('settings') }}" class="hud-icon-btn" title="Settings">
+            <i class="bi bi-gear-fill"></i>
+        </a>
+        <div class="comic-auth-box">
+            <span class="comic-username">{{ current_user.username }}</span>
+            <a href="{{ url_for('logout') }}" class="comic-logout-btn">LOGOUT</a>
+        </div>
+        {% else %}
+        <div class="comic-auth-box">
+            <a href="{{ url_for('login') }}" class="comic-logout-btn" style="background:#2196f3;">LOGIN</a>
+            <a href="{{ url_for('register') }}" class="comic-logout-btn" style="background:#ffeb3b; color:#000;">REGISTER</a>
+        </div>
+        {% endif %}
+    </div>
+</nav>
+
+<!-- Flashed Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="container mt-2 mb-4">
+    {% for cat, msg in messages %}
+    <div class="comic-panel py-3 px-4 fw-bold d-flex align-items-center gap-3 fs-5"
+         style="background:{% if cat=='error' %}var(--red); color:#fff;{% elif cat=='warning' %}var(--yellow); color:#000;{% else %}var(--green); color:#000;{% endif %};">
+        <i class="bi {% if cat=='error' %}bi-exclamation-triangle-fill{% elif cat=='warning' %}bi-exclamation-circle-fill{% else %}bi-check-circle-fill{% endif %} fs-3"></i>
+        <span>{{ msg }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<div class="container py-2">
+
+    <!-- Header / Game Overview -->
+    <div class="comic-panel roadmap-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                {% if game.image_path %}
+                <img src="{{ url_for('static', filename=game.image_path) }}" alt="{{ game.title }}" class="game-thumb">
+                {% else %}
+                <div class="game-thumb d-flex align-items-center justify-content-center bg-dark text-warning fs-1">
+                    <i class="bi bi-joystick"></i>
+                </div>
+                {% endif %}
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                        <h1 class="mb-0 text-white">{{ game.title }}</h1>
+                        <span class="badge badge-tag badge-feature">{{ game.genre }}</span>
+                        {% if is_dev %}
+                        <span class="badge badge-tag badge-dev"><i class="bi bi-shield-shaded"></i> YOU ARE DEVELOPER</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-white-50 mb-0">
+                        Public Development Roadmap &amp; Community Feature Voting &bull; Dev: <strong class="text-white">{{ game.user.username }}</strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <a href="{{ url_for('game_detail', game_id=game.id) }}" class="btn btn-outline-light btn-lg btn-comic px-3 py-2" style="font-size: 1.2rem; border: 3px solid #000; box-shadow: 4px 4px 0 #000;">
+                    <i class="bi bi-arrow-left"></i> GAME PAGE
+                </a>
+
+                {% if current_user.is_authenticated %}
+                <button type="button" class="btn btn-warning btn-lg btn-comic px-4 py-2"
+                        data-bs-toggle="modal" data-bs-target="#createItemModal"
+                        style="font-size: 1.3rem; border: 3px solid #000; box-shadow: 4px 4px 0 #000;">
+                    {% if is_dev %}
+                    <i class="bi bi-plus-circle-fill"></i> POST ROADMAP ITEM
+                    {% else %}
+                    <i class="bi bi-lightbulb-fill"></i> SUGGEST / REPORT BUG
+                    {% endif %}
+                </button>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-warning btn-lg btn-comic px-4 py-2"
+                   style="font-size: 1.3rem; border: 3px solid #000; box-shadow: 4px 4px 0 #000;">
+                    <i class="bi bi-box-arrow-in-right"></i> LOGIN TO VOTE / REPORT
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr style="border-color: #333; margin: 20px 0 16px 0;">
+
+        <!-- Stats and Filter Bar -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <!-- Category Filters -->
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="text-white-50 fw-bold me-1">FILTER:</span>
+                <a href="{{ url_for('roadmap.game_roadmap', game_id=game.id, category='all', sort=sort_by) }}"
+                   class="filter-btn {% if category_filter == 'all' %}active{% endif %}">ALL ({{ total_items }})</a>
+                <a href="{{ url_for('roadmap.game_roadmap', game_id=game.id, category='feature', sort=sort_by) }}"
+                   class="filter-btn {% if category_filter == 'feature' %}active{% endif %}">
+                   <i class="bi bi-star-fill text-warning"></i> FEATURES ({{ feature_count }})
+                </a>
+                <a href="{{ url_for('roadmap.game_roadmap', game_id=game.id, category='bug', sort=sort_by) }}"
+                   class="filter-btn {% if category_filter == 'bug' %}active{% endif %}">
+                   <i class="bi bi-bug-fill text-danger"></i> BUGS ({{ bug_count }})
+                </a>
+            </div>
+
+            <!-- Sort Toggle -->
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-white-50 fw-bold">SORT:</span>
+                <a href="{{ url_for('roadmap.game_roadmap', game_id=game.id, category=category_filter, sort='votes') }}"
+                   class="filter-btn {% if sort_by == 'votes' %}active{% endif %}" title="Most popular">
+                   <i class="bi bi-fire"></i> TOP VOTED
+                </a>
+                <a href="{{ url_for('roadmap.game_roadmap', game_id=game.id, category=category_filter, sort='newest') }}"
+                   class="filter-btn {% if sort_by == 'newest' %}active{% endif %}" title="Most recent">
+                   <i class="bi bi-clock-fill"></i> NEWEST
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if is_dev %}
+    <div class="alert alert-dark d-flex align-items-center gap-2 mb-4"
+         style="background: #1e1e24; border: 3px dashed var(--yellow); color: #fff; font-size: 1.05rem;">
+        <i class="bi bi-info-circle-fill text-warning fs-4"></i>
+        <span><strong>Developer Mode Active:</strong> You can drag &amp; drop cards between columns to update their status, or use the quick buttons on cards. Card authors will be notified when their item progresses!</span>
+    </div>
+    {% endif %}
+
+    <!-- Mini Trello-Board: 3 Kanban Columns -->
+    <div class="kanban-board mb-5">
+
+        <!-- COLUMN 1: PLANNED -->
+        <div class="kanban-column col-planned" data-status="planned">
+            <div class="kanban-column-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-pin-angle-fill fs-4"></i>
+                    <h3 class="mb-0">PLANNED</h3>
+                </div>
+                <span class="column-badge" id="count-planned">{{ planned_items|length }}</span>
+            </div>
+
+            <div class="kanban-card-list" id="list-planned" data-status="planned">
+                {% for item in planned_items %}
+                    <div class="roadmap-card"
+                         id="card-{{ item.id }}"
+                         data-item-id="{{ item.id }}"
+                         data-status="{{ item.status }}"
+                         {% if is_dev %}draggable="true"{% endif %}
+                         onclick="openCardDetailModal({{ item.id }})">
+
+                        <div class="card-top-row">
+                            <div class="d-flex align-items-center gap-1 flex-wrap">
+                                {% if item.category == 'bug' %}
+                                <span class="badge badge-tag badge-bug"><i class="bi bi-bug-fill"></i> BUG</span>
+                                {% elif item.category == 'feature' %}
+                                <span class="badge badge-tag badge-feature"><i class="bi bi-star-fill"></i> FEATURE</span>
+                                {% else %}
+                                <span class="badge badge-tag badge-improvement"><i class="bi bi-tools"></i> TWEAK</span>
+                                {% endif %}
+
+                                {% if item.is_dev_post %}
+                                <span class="badge badge-tag badge-dev"><i class="bi bi-shield-shaded"></i> DEV</span>
+                                {% else %}
+                                <span class="badge badge-tag badge-community"><i class="bi bi-person-fill"></i> COMMUNITY</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Upvote Button -->
+                            <button type="button"
+                                    class="upvote-btn {% if item.id in user_voted_ids %}voted{% endif %}"
+                                    onclick="handleVoteClick(event, {{ item.id }})"
+                                    title="Upvote this item">
+                                <i class="bi bi-caret-up-fill"></i>
+                                <span class="vote-count-num" id="vote-count-{{ item.id }}">{{ item.upvotes_count }}</span>
+                            </button>
+                        </div>
+
+                        <h4 class="text-white mb-2" style="font-size: 1.3rem;">{{ item.title }}</h4>
+
+                        {% if item.description %}
+                        <p class="text-white-50 mb-3" style="font-size: 0.95rem; line-height: 1.4;">
+                            {{ item.description|truncate(120) }}
+                        </p>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between align-items-center text-white-50 small mt-auto">
+                            <span><i class="bi bi-person"></i> {{ item.author.username }}</span>
+                            <span><i class="bi bi-chat-dots-fill"></i> {{ item.comments|length }}</span>
+                        </div>
+
+                        {% if is_dev %}
+                        <div class="card-dev-actions" onclick="event.stopPropagation();">
+                            <span class="small text-warning fw-bold">MOVE:</span>
+                            <button class="btn-dev-quick move-progress" onclick="moveItemStatus({{ item.id }}, 'in_progress')" title="Move to In Progress">
+                                &rarr; IN PROGRESS
+                            </button>
+                            <button class="btn-dev-quick move-done" onclick="moveItemStatus({{ item.id }}, 'done')" title="Move to Done">
+                                &rarr; DONE
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="empty-column-box">
+                        <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
+                        No items planned yet.
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- COLUMN 2: IN PROGRESS -->
+        <div class="kanban-column col-in_progress" data-status="in_progress">
+            <div class="kanban-column-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-lightning-charge-fill fs-4"></i>
+                    <h3 class="mb-0">IN PROGRESS</h3>
+                </div>
+                <span class="column-badge" id="count-in_progress">{{ in_progress_items|length }}</span>
+            </div>
+
+            <div class="kanban-card-list" id="list-in_progress" data-status="in_progress">
+                {% for item in in_progress_items %}
+                    <div class="roadmap-card"
+                         id="card-{{ item.id }}"
+                         data-item-id="{{ item.id }}"
+                         data-status="{{ item.status }}"
+                         {% if is_dev %}draggable="true"{% endif %}
+                         onclick="openCardDetailModal({{ item.id }})">
+
+                        <div class="card-top-row">
+                            <div class="d-flex align-items-center gap-1 flex-wrap">
+                                {% if item.category == 'bug' %}
+                                <span class="badge badge-tag badge-bug"><i class="bi bi-bug-fill"></i> BUG</span>
+                                {% elif item.category == 'feature' %}
+                                <span class="badge badge-tag badge-feature"><i class="bi bi-star-fill"></i> FEATURE</span>
+                                {% else %}
+                                <span class="badge badge-tag badge-improvement"><i class="bi bi-tools"></i> TWEAK</span>
+                                {% endif %}
+
+                                {% if item.is_dev_post %}
+                                <span class="badge badge-tag badge-dev"><i class="bi bi-shield-shaded"></i> DEV</span>
+                                {% else %}
+                                <span class="badge badge-tag badge-community"><i class="bi bi-person-fill"></i> COMMUNITY</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Upvote Button -->
+                            <button type="button"
+                                    class="upvote-btn {% if item.id in user_voted_ids %}voted{% endif %}"
+                                    onclick="handleVoteClick(event, {{ item.id }})"
+                                    title="Upvote this item">
+                                <i class="bi bi-caret-up-fill"></i>
+                                <span class="vote-count-num" id="vote-count-{{ item.id }}">{{ item.upvotes_count }}</span>
+                            </button>
+                        </div>
+
+                        <h4 class="text-white mb-2" style="font-size: 1.3rem;">{{ item.title }}</h4>
+
+                        {% if item.description %}
+                        <p class="text-white-50 mb-3" style="font-size: 0.95rem; line-height: 1.4;">
+                            {{ item.description|truncate(120) }}
+                        </p>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between align-items-center text-white-50 small mt-auto">
+                            <span><i class="bi bi-person"></i> {{ item.author.username }}</span>
+                            <span><i class="bi bi-chat-dots-fill"></i> {{ item.comments|length }}</span>
+                        </div>
+
+                        {% if is_dev %}
+                        <div class="card-dev-actions" onclick="event.stopPropagation();">
+                            <span class="small text-warning fw-bold">MOVE:</span>
+                            <button class="btn-dev-quick move-planned" onclick="moveItemStatus({{ item.id }}, 'planned')" title="Move to Planned">
+                                &larr; PLANNED
+                            </button>
+                            <button class="btn-dev-quick move-done" onclick="moveItemStatus({{ item.id }}, 'done')" title="Move to Done">
+                                &rarr; DONE
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="empty-column-box">
+                        <i class="bi bi-hourglass fs-2 mb-2 d-block"></i>
+                        Nothing in progress right now.
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- COLUMN 3: DONE -->
+        <div class="kanban-column col-done" data-status="done">
+            <div class="kanban-column-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-check-circle-fill fs-4"></i>
+                    <h3 class="mb-0">DONE</h3>
+                </div>
+                <span class="column-badge" id="count-done">{{ done_items|length }}</span>
+            </div>
+
+            <div class="kanban-card-list" id="list-done" data-status="done">
+                {% for item in done_items %}
+                    <div class="roadmap-card"
+                         id="card-{{ item.id }}"
+                         data-item-id="{{ item.id }}"
+                         data-status="{{ item.status }}"
+                         {% if is_dev %}draggable="true"{% endif %}
+                         onclick="openCardDetailModal({{ item.id }})">
+
+                        <div class="card-top-row">
+                            <div class="d-flex align-items-center gap-1 flex-wrap">
+                                {% if item.category == 'bug' %}
+                                <span class="badge badge-tag badge-bug"><i class="bi bi-bug-fill"></i> BUG</span>
+                                {% elif item.category == 'feature' %}
+                                <span class="badge badge-tag badge-feature"><i class="bi bi-star-fill"></i> FEATURE</span>
+                                {% else %}
+                                <span class="badge badge-tag badge-improvement"><i class="bi bi-tools"></i> TWEAK</span>
+                                {% endif %}
+
+                                {% if item.is_dev_post %}
+                                <span class="badge badge-tag badge-dev"><i class="bi bi-shield-shaded"></i> DEV</span>
+                                {% else %}
+                                <span class="badge badge-tag badge-community"><i class="bi bi-person-fill"></i> COMMUNITY</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Upvote Button -->
+                            <button type="button"
+                                    class="upvote-btn {% if item.id in user_voted_ids %}voted{% endif %}"
+                                    onclick="handleVoteClick(event, {{ item.id }})"
+                                    title="Upvote this item">
+                                <i class="bi bi-caret-up-fill"></i>
+                                <span class="vote-count-num" id="vote-count-{{ item.id }}">{{ item.upvotes_count }}</span>
+                            </button>
+                        </div>
+
+                        <h4 class="text-white mb-2" style="font-size: 1.3rem;">{{ item.title }}</h4>
+
+                        {% if item.description %}
+                        <p class="text-white-50 mb-3" style="font-size: 0.95rem; line-height: 1.4;">
+                            {{ item.description|truncate(120) }}
+                        </p>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between align-items-center text-white-50 small mt-auto">
+                            <span><i class="bi bi-person"></i> {{ item.author.username }}</span>
+                            <span><i class="bi bi-chat-dots-fill"></i> {{ item.comments|length }}</span>
+                        </div>
+
+                        {% if is_dev %}
+                        <div class="card-dev-actions" onclick="event.stopPropagation();">
+                            <span class="small text-warning fw-bold">MOVE:</span>
+                            <button class="btn-dev-quick move-planned" onclick="moveItemStatus({{ item.id }}, 'planned')" title="Move to Planned">
+                                &larr; PLANNED
+                            </button>
+                            <button class="btn-dev-quick move-progress" onclick="moveItemStatus({{ item.id }}, 'in_progress')" title="Move to In Progress">
+                                &larr; IN PROGRESS
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="empty-column-box">
+                        <i class="bi bi-trophy fs-2 mb-2 d-block"></i>
+                        No finished items yet.
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ================= MODALS ================= -->
+
+<!-- 1. CREATE ROADMAP ITEM / REPORT BUG MODAL -->
+<div class="modal fade" id="createItemModal" tabindex="-1" aria-labelledby="createItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content comic-modal-content">
+            <div class="modal-header border-bottom border-dark">
+                <h3 class="modal-title comic-font text-warning mb-0" id="createItemModalLabel">
+                    {% if is_dev %}
+                    <i class="bi bi-plus-circle-fill"></i> POST ROADMAP ITEM
+                    {% else %}
+                    <i class="bi bi-lightbulb-fill"></i> REPORT BUG OR SUGGEST FEATURE
+                    {% endif %}
+                </h3>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('roadmap.create_roadmap_item', game_id=game.id) }}" method="POST">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-white">CATEGORY</label>
+                        <select name="category" class="form-select comic-input" required>
+                            <option value="feature">Feature Request / New Idea</option>
+                            <option value="bug">Bug Report</option>
+                            <option value="improvement">Improvement / Polish</option>
+                        </select>
+                    </div>
+
+                    {% if is_dev %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-white">INITIAL STATUS / COLUMN</label>
+                        <select name="status" class="form-select comic-input" required>
+                            <option value="planned">Planned</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="done">Done</option>
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-white">TITLE</label>
+                        <input type="text" name="title" class="form-control comic-input"
+                               placeholder="e.g. Add Controller Support or Boss Fight Glitch" required maxlength="150">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-white">DESCRIPTION</label>
+                        <textarea name="description" class="form-control comic-input" rows="4"
+                                  placeholder="Describe the feature or steps to reproduce the bug..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-dark d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-light btn-comic px-4" data-bs-dismiss="modal">CANCEL</button>
+                    <button type="submit" class="btn btn-warning btn-comic px-4" style="font-size: 1.2rem; border: 3px solid #000; box-shadow: 4px 4px 0 #000;">
+                        SUBMIT CARD
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 2. CARD DETAIL & DISCUSSION MODAL -->
+<div class="modal fade" id="cardDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content comic-modal-content">
+            <div class="modal-header border-bottom border-dark d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span id="modal-category-badge" class="badge badge-tag">CATEGORY</span>
+                    <span id="modal-status-badge" class="badge badge-tag badge-dev">STATUS</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <h2 class="text-warning mb-0" id="modal-item-title">Title</h2>
+                    <button type="button" id="modal-upvote-btn" class="upvote-btn" style="font-size: 1.3rem; padding: 6px 14px;">
+                        <i class="bi bi-caret-up-fill"></i>
+                        <span id="modal-upvote-count">0</span>
+                    </button>
+                </div>
+
+                <div class="text-white-50 small mb-4" id="modal-author-info">
+                    Posted by <strong class="text-white" id="modal-author-name">User</strong> on <span id="modal-created-at">Date</span>
+                </div>
+
+                <div class="p-3 mb-4" style="background: #23232a; border: 2px solid #000; box-shadow: 3px 3px 0 #000;">
+                    <h5 class="comic-font text-white mb-2">DETAILS &amp; NOTES:</h5>
+                    <p class="text-light mb-0 fs-5" id="modal-item-description" style="white-space: pre-wrap;">No description provided.</p>
+                </div>
+
+                <!-- Dev Quick Status Change within modal -->
+                {% if is_dev %}
+                <div class="p-3 mb-4" style="background: #2a2415; border: 2px dashed var(--yellow);">
+                    <label class="fw-bold text-warning mb-2 d-block"><i class="bi bi-gear-fill"></i> DEVELOPER: MOVE STATUS</label>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-sm btn-outline-info btn-comic" onclick="moveItemStatus(currentModalItemId, 'planned')">
+                            &rarr; PLANNED
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning btn-comic" onclick="moveItemStatus(currentModalItemId, 'in_progress')">
+                            &rarr; IN PROGRESS
+                        </button>
+                        <button class="btn btn-sm btn-outline-success btn-comic" onclick="moveItemStatus(currentModalItemId, 'done')">
+                            &rarr; DONE
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Discussion & Comments -->
+                <div class="mt-4">
+                    <h4 class="comic-font text-white mb-3"><i class="bi bi-chat-left-text-fill text-warning"></i> DISCUSSION</h4>
+
+                    <div id="modal-comments-list" class="mb-3" style="max-height: 280px; overflow-y: auto;">
+                        <!-- Comments dynamically inserted here -->
+                    </div>
+
+                    {% if current_user.is_authenticated %}
+                    <form id="addCommentForm" onsubmit="handleCommentSubmit(event)">
+                        <div class="input-group">
+                            <textarea id="commentInput" class="form-control comic-input" rows="2" placeholder="Leave feedback or repro steps..." required></textarea>
+                            <button type="submit" class="btn btn-warning btn-comic px-4" style="border: 3px solid #000;">
+                                POST
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <p class="text-white-50"><a href="{{ url_for('login') }}" class="text-warning">Log in</a> to leave a comment or feedback.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="modal-footer border-top border-dark d-flex justify-content-between">
+                <div id="modal-owner-actions">
+                    <!-- Delete button if authorized -->
+                </div>
+                <button type="button" class="btn btn-outline-light btn-comic px-4" data-bs-dismiss="modal">CLOSE</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Toast -->
+<div id="roadmapToast" class="roadmap-toast">
+    <span id="roadmapToastText">Status updated!</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const isDeveloper = {{ 'true' if is_dev else 'false' }};
+    const isAuthenticated = {{ 'true' if current_user.is_authenticated else 'false' }};
+    let currentModalItemId = null;
+
+    // Toast helper
+    function showToast(text) {
+        const toast = document.getElementById('roadmapToast');
+        document.getElementById('roadmapToastText').textContent = text;
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 2600);
+    }
+
+    // Upvote Toggle Function
+    function handleVoteClick(event, itemId) {
+        event.stopPropagation();
+        if (!isAuthenticated) {
+            window.location.href = "{{ url_for('login') }}";
+            return;
+        }
+
+        fetch(`/roadmap/item/${itemId}/vote`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const countEls = document.querySelectorAll(`#vote-count-${itemId}`);
+                countEls.forEach(el => el.textContent = data.upvotes_count);
+
+                const card = document.getElementById(`card-${itemId}`);
+                if (card) {
+                    const btn = card.querySelector('.upvote-btn');
+                    if (data.voted) {
+                        btn.classList.add('voted');
+                    } else {
+                        btn.classList.remove('voted');
+                    }
+                }
+
+                // Update modal if open
+                if (currentModalItemId === itemId) {
+                    const modalBtn = document.getElementById('modal-upvote-btn');
+                    document.getElementById('modal-upvote-count').textContent = data.upvotes_count;
+                    if (data.voted) {
+                        modalBtn.classList.add('voted');
+                    } else {
+                        modalBtn.classList.remove('voted');
+                    }
+                }
+            }
+        })
+        .catch(err => console.error('Vote error:', err));
+    }
+
+    // Change Card Status (AJAX)
+    function moveItemStatus(itemId, newStatus) {
+        fetch(`/roadmap/item/${itemId}/status`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast(`Moved to ${data.status_label}!`);
+                const card = document.getElementById(`card-${itemId}`);
+                if (card) {
+                    const targetList = document.getElementById(`list-${newStatus}`);
+                    if (targetList) {
+                        // Remove empty box from target if present
+                        const emptyBox = targetList.querySelector('.empty-column-box');
+                        if (emptyBox) emptyBox.remove();
+
+                        targetList.appendChild(card);
+                        card.setAttribute('data-status', newStatus);
+                        updateColumnCounters();
+                    }
+                }
+                // If modal is open, refresh detail
+                if (currentModalItemId === itemId) {
+                    openCardDetailModal(itemId);
+                }
+            } else {
+                alert(data.message || 'Could not update status');
+            }
+        })
+        .catch(err => console.error('Move error:', err));
+    }
+
+    // Update Kanban counters dynamically
+    function updateColumnCounters() {
+        ['planned', 'in_progress', 'done'].forEach(status => {
+            const list = document.getElementById(`list-${status}`);
+            const countEl = document.getElementById(`count-${status}`);
+            if (list && countEl) {
+                const cards = list.querySelectorAll('.roadmap-card');
+                countEl.textContent = cards.length;
+            }
+        });
+    }
+
+    // Open Card Detail Modal
+    function openCardDetailModal(itemId) {
+        currentModalItemId = itemId;
+        fetch(`/roadmap/item/${itemId}/detail`)
+        .then(res => res.json())
+        .then(item => {
+            document.getElementById('modal-item-title').textContent = item.title;
+            document.getElementById('modal-item-description').textContent = item.description || "No description provided.";
+            document.getElementById('modal-author-name').textContent = item.author;
+            document.getElementById('modal-created-at').textContent = item.created_at;
+            document.getElementById('modal-upvote-count').textContent = item.upvotes_count;
+
+            const categoryBadge = document.getElementById('modal-category-badge');
+            categoryBadge.textContent = item.category_label;
+            categoryBadge.className = `badge badge-tag badge-${item.category}`;
+
+            const statusBadge = document.getElementById('modal-status-badge');
+            statusBadge.textContent = item.status_label.toUpperCase();
+
+            const modalUpvoteBtn = document.getElementById('modal-upvote-btn');
+            modalUpvoteBtn.className = `upvote-btn ${item.has_voted ? 'voted' : ''}`;
+            modalUpvoteBtn.onclick = (e) => handleVoteClick(e, item.id);
+
+            // Owner / Dev actions (Delete)
+            const actionsDiv = document.getElementById('modal-owner-actions');
+            actionsDiv.innerHTML = '';
+            if (item.can_delete) {
+                const delBtn = document.createElement('button');
+                delBtn.className = 'btn btn-outline-danger btn-comic btn-sm';
+                delBtn.innerHTML = '<i class="bi bi-trash-fill"></i> DELETE ITEM';
+                delBtn.onclick = () => deleteItem(item.id);
+                actionsDiv.appendChild(delBtn);
+            }
+
+            // Comments
+            renderComments(item.comments);
+
+            const modal = new bootstrap.Modal(document.getElementById('cardDetailModal'));
+            modal.show();
+        })
+        .catch(err => console.error('Detail fetch error:', err));
+    }
+
+    function renderComments(comments) {
+        const list = document.getElementById('modal-comments-list');
+        list.innerHTML = '';
+        if (!comments || comments.length === 0) {
+            list.innerHTML = '<p class="text-white-50 fst-italic mb-0">No comments yet. Start the conversation!</p>';
+            return;
+        }
+
+        comments.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'comment-item';
+            div.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div>
+                        <strong class="text-warning">${escapeHtml(c.author)}</strong>
+                        ${c.author_is_dev ? '<span class="comment-author-badge ms-1">DEV</span>' : ''}
+                    </div>
+                    <span class="text-white-50 small">${c.created_at}</span>
+                </div>
+                <p class="mb-0 text-light" style="white-space: pre-wrap;">${escapeHtml(c.content)}</p>
+            `;
+            list.appendChild(div);
+        });
+        list.scrollTop = list.scrollHeight;
+    }
+
+    function handleCommentSubmit(event) {
+        event.preventDefault();
+        const input = document.getElementById('commentInput');
+        const content = input.value.trim();
+        if (!content || !currentModalItemId) return;
+
+        fetch(`/roadmap/item/${currentModalItemId}/comment`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ content: content })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                input.value = '';
+                // Reload item details to refresh comments and card comments badge
+                openCardDetailModal(currentModalItemId);
+            }
+        })
+        .catch(err => console.error('Comment error:', err));
+    }
+
+    function deleteItem(itemId) {
+        if (!confirm("Are you sure you want to delete this roadmap item?")) return;
+
+        fetch(`/roadmap/item/${itemId}/delete`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const card = document.getElementById(`card-${itemId}`);
+                if (card) card.remove();
+                updateColumnCounters();
+                bootstrap.Modal.getInstance(document.getElementById('cardDetailModal')).hide();
+                showToast("Item deleted.");
+            }
+        });
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // HTML5 Drag and Drop for Developers
+    if (isDeveloper) {
+        let draggedCard = null;
+
+        document.querySelectorAll('.roadmap-card').forEach(card => {
+            card.addEventListener('dragstart', (e) => {
+                draggedCard = card;
+                card.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', card.getAttribute('data-item-id'));
+            });
+
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+                draggedCard = null;
+                document.querySelectorAll('.kanban-card-list').forEach(list => list.classList.remove('drag-over'));
+            });
+        });
+
+        document.querySelectorAll('.kanban-card-list').forEach(list => {
+            list.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                list.classList.add('drag-over');
+            });
+
+            list.addEventListener('dragleave', () => {
+                list.classList.remove('drag-over');
+            });
+
+            list.addEventListener('drop', (e) => {
+                e.preventDefault();
+                list.classList.remove('drag-over');
+                const itemId = e.dataTransfer.getData('text/plain');
+                const targetStatus = list.getAttribute('data-status');
+
+                if (itemId && targetStatus) {
+                    moveItemStatus(itemId, targetStatus);
+                }
+            });
+        });
+    }
+</script>
+</body>
+</html>

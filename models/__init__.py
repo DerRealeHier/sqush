@@ -15,6 +15,7 @@ from models.commerce import Purchase, Wishlist, CartItem, Gift, Tip
 from models.bundle import Bundle, BundleGame, BundleCollaborator
 from models.collection import Collection, CollectionGame
 from models.message import DirectMessage
+from models.roadmap import RoadmapItem, RoadmapVote, RoadmapComment
 
 __all__ = [
     "Friendship",
@@ -44,4 +45,7 @@ __all__ = [
     "Collection",
     "CollectionGame",
     "DirectMessage",
+    "RoadmapItem",
+    "RoadmapVote",
+    "RoadmapComment",
 ]

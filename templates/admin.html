@@ -280,9 +280,11 @@
                         <h5 class="mb-1">{{game.title}}</h5>
                     </a>
                     <div class="mb-2">
+                        {% if game.tags %}
                         {% for tag in game.tags.split(',') %}
                         <span class="badge tag-badge">{{ tag.strip() }}</span>
                         {% endfor %}
+                        {% endif %}
                         {% if game.demo_path %}
                         <span class="badge demo-badge">DEMO LIVE</span>
                         {% endif %}
@@ -316,6 +318,10 @@
                     <a class="btn edit-btn btn-sm" href="{{ url_for('game_stats', game_id=game.id) }}"
                        style="background: var(--blue);">
                         <i class="bi bi-graph-up"></i> STATS
+                    </a>
+                    <a class="btn edit-btn btn-sm" href="{{ url_for('roadmap.game_roadmap', game_id=game.id) }}"
+                       style="background: var(--yellow); color: #000;">
+                        <i class="bi bi-kanban"></i> ROADMAP
                     </a>
                     {% endif %}
                 </div>

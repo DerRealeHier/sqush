@@ -31,6 +31,9 @@ from models import (
     Tip,
     UserBadge,
     DirectMessage,
+    RoadmapItem,
+    RoadmapVote,
+    RoadmapComment,
 )
 from services import (
     connected_login_methods_count,
@@ -250,6 +253,13 @@ with app.app_context():
                 ("idx_collection_user", "collection", "user_id"),
                 ("idx_collection_game_c", "collection_game", "collection_id"),
                 ("idx_collection_game_g", "collection_game", "game_id"),
+                ("idx_roadmap_game", "roadmap_item", "game_id"),
+                ("idx_roadmap_status", "roadmap_item", "status"),
+                ("idx_roadmap_votes", "roadmap_item", "upvotes_count"),
+                ("idx_roadmap_author", "roadmap_item", "author_id"),
+                ("idx_roadmap_vote_item", "roadmap_vote", "item_id"),
+                ("idx_roadmap_vote_user", "roadmap_vote", "user_id"),
+                ("idx_roadmap_comment_item", "roadmap_comment", "item_id"),
             ]
             for idx_name, tbl, col in indexes:
                 try:
