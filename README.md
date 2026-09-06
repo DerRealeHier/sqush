@@ -10,13 +10,14 @@
 |---|----------------------------------------------------------------------------------------------------|
 | **Auth** | Email/password registration, email verification, OTP 2FA, Google login (Firebase), Hack Club OAuth |
 | **Store** | Browse games, search & filter by tags, featured/popular/recommended listings                       |
-| **Game pages** | Screenshots, videos, reviews with upvotes, developer update posts with comments, Tip Jar |
+| **Game pages** | Screenshots, videos, reviews with upvotes, developer update posts with comments, unified action pills (Wishlist, Follow, Roadmap, Gift, Message Dev, Tip Dev), and dedicated Buy Box with demo downloads |
+| **Roadmaps** | Public interactive Kanban boards (Planned, In Progress, Done), community feature upvoting, bug reporting, drag-and-drop card status management for devs, and item discussion threads |
 | **Purchases** | Stripe checkout, cart (guest + logged in), wishlists, game gifting, Tip Jar donations              |
 | **Bundles** | Multi-game bundles with collaborator roles, bundle-specific pricing                                |
 | **Library** | Owned games, download game files, playtime tracking                                                |
 | **Social** | Friends, profile pages, profile comments, notifications, collections                               |
 | **Messaging** | Direct messaging (user-to-user & user-to-dev), conversation threads, game inquiries, unread badges  |
-| **Developer** | Dashboard, upload game files (ZIP/EXE), sales and tip analytics, game stats                        |
+| **Developer** | Dashboard, upload game files (ZIP/EXE), sales and tip analytics, game stats, roadmap item management |
 | **Security** | Rate limiting, ClamAV malware scanning for uploaded files                                          |
 | **Badges** | User badge system with featured badge on profile (including Tip Jar Hero)                          |
 
@@ -43,14 +44,15 @@
 sqush.io/
 ├── app.py              # App factory & entry point
 ├── config.py           # All config loaded from .env
-├── extensions.py       # Flask extension instances (db, login, mail, stripe, firebase, …)
+├── extensions.py       # Flask extension instances (db, login, mail, stripe, firebase, ...)
 ├── models/
 │   ├── user.py         # User, Friendship, Notification, ProfileComment, LoginOTP, UserBadge
-│   ├── game.py         # Game, Screenshot, Video, Review, ReviewVote, GameUpdate, GameStats, …
+│   ├── game.py         # Game, Screenshot, Video, Review, ReviewVote, GameUpdate, GameStats, ...
 │   ├── commerce.py     # Purchase, Wishlist, CartItem, Gift, Tip
 │   ├── bundle.py       # Bundle, BundleGame, BundleCollaborator
 │   ├── collection.py   # Collection, CollectionGame
-│   └── message.py      # DirectMessage (user-to-user & user-to-dev inquiries)
+│   ├── message.py      # DirectMessage (user-to-user & user-to-dev inquiries)
+│   └── roadmap.py      # RoadmapItem, RoadmapVote, RoadmapComment
 ├── routes/
 │   ├── auth.py         # Register, login, logout, OAuth (Google, Hack Club), 2FA
 │   ├── main.py         # Home, store, game detail pages
@@ -59,7 +61,8 @@ sqush.io/
 │   ├── library.py      # User library, downloads
 │   ├── social.py       # Profiles, friends, collections, notifications
 │   ├── developer.py    # Developer dashboard, game upload/edit, analytics, revenue and tips
-│   └── messages.py     # Direct messaging, inbox, conversation threads, unread counters
+│   ├── messages.py     # Direct messaging, inbox, conversation threads, unread counters
+│   └── roadmap.py      # Public Kanban boards, feature voting, bug reporting, card discussions
 ├── services/
 │   ├── auth_service.py   # load_user, login helpers
 │   ├── badge_service.py  # Badge award logic
@@ -68,8 +71,9 @@ sqush.io/
 │   ├── game_service.py   # Recommendations, stats, tags, tip calculations
 │   ├── mail_service.py   # Transactional email templates
 │   └── payment_service.py# Stripe checkout & fulfillment (games, gifts, tips)
-├── templates/          # Jinja2 HTML templates (including developer_revenue.html)
+├── templates/          # Jinja2 HTML templates (including game_roadmap.html, developer_revenue.html)
 ├── static/             # CSS, JS, images, uploaded files
+├── tests/              # Automated test suites (test_roadmap.py)
 └── migrations/         # Alembic database migrations
 ```
 
@@ -213,6 +217,20 @@ flask db upgrade
 
 # Roll back one revision
 flask db downgrade
+```
+
+---
+
+## Testing
+
+Run tests using Python's built-in unittest runner:
+
+```bash
+# Run all tests
+python -m unittest discover -s tests
+
+# Run roadmap test suite
+python -m unittest tests/test_roadmap.py
 ```
 
 ---
