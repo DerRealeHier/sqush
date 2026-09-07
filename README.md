@@ -9,15 +9,15 @@
 | Category | Features                                                                                           |
 |---|----------------------------------------------------------------------------------------------------|
 | **Auth** | Email/password registration, email verification, OTP 2FA, Google login (Firebase), Hack Club OAuth |
-| **Store** | Browse games, search & filter by tags, featured/popular/recommended listings                       |
+| **Store** | Browse games, dynamic tag & genre search filtering, featured/popular/recommended listings        |
 | **Game pages** | Screenshots, videos, reviews with upvotes, developer update posts with comments, unified action pills (Wishlist, Follow, Roadmap, Gift, Message Dev, Tip Dev), and dedicated Buy Box with demo downloads |
 | **Roadmaps** | Public interactive Kanban boards (Planned, In Progress, Done), community feature upvoting, bug reporting, drag-and-drop card status management for devs, and item discussion threads |
-| **Purchases** | Stripe checkout, cart (guest + logged in), wishlists, game gifting, Tip Jar donations              |
+| **Purchases** | Stripe checkout, automated developer payouts via Stripe Connect (90/10 split), multi-seller cart transfers, wishlists, game gifting, Tip Jar donations |
 | **Bundles** | Multi-game bundles with collaborator roles, bundle-specific pricing                                |
 | **Library** | Owned games, download game files, playtime tracking                                                |
 | **Social** | Friends, profile pages, profile comments, notifications, collections                               |
 | **Messaging** | Direct messaging (user-to-user & user-to-dev), conversation threads, game inquiries, unread badges  |
-| **Developer** | Dashboard, upload game files (ZIP/EXE), sales and tip analytics, game stats, roadmap item management |
+| **Developer** | Dashboard, upload game files (ZIP/EXE), sales and tip analytics, Stripe Connect Express onboarding & payouts portal, retroactive backlog fulfillment, game stats, roadmap item management |
 | **Security** | Rate limiting, ClamAV malware scanning for uploaded files                                          |
 | **Badges** | User badge system with featured badge on profile (including Tip Jar Hero)                          |
 
@@ -56,11 +56,11 @@ sqush.io/
 ├── routes/
 │   ├── auth.py         # Register, login, logout, OAuth (Google, Hack Club), 2FA
 │   ├── main.py         # Home, store, game detail pages
-│   ├── cart.py         # Cart management (guest & logged-in)
-│   ├── checkout.py     # Stripe checkout, webhooks, gifting, Tip Jar
+│   ├── cart.py         # Cart management (guest & logged-in, multi-seller checkout)
+│   ├── checkout.py     # Stripe checkout, webhooks (account.updated, checkout.session.completed), gifting, Tip Jar
 │   ├── library.py      # User library, downloads
 │   ├── social.py       # Profiles, friends, collections, notifications
-│   ├── developer.py    # Developer dashboard, game upload/edit, analytics, revenue and tips
+│   ├── developer.py    # Developer dashboard, game upload/edit, analytics, revenue & Stripe Connect onboarding
 │   ├── messages.py     # Direct messaging, inbox, conversation threads, unread counters
 │   └── roadmap.py      # Public Kanban boards, feature voting, bug reporting, card discussions
 ├── services/
@@ -70,10 +70,10 @@ sqush.io/
 │   ├── file_service.py   # File upload & ClamAV scan
 │   ├── game_service.py   # Recommendations, stats, tags, tip calculations
 │   ├── mail_service.py   # Transactional email templates
-│   └── payment_service.py# Stripe checkout & fulfillment (games, gifts, tips)
+│   └── payment_service.py# Stripe Connect engine, destination charges, multi-seller payouts & fulfillment
 ├── templates/          # Jinja2 HTML templates (including game_roadmap.html, developer_revenue.html)
 ├── static/             # CSS, JS, images, uploaded files
-├── tests/              # Automated test suites (test_roadmap.py)
+├── tests/              # Automated test suites (test_roadmap.py, test_stripe_connect.py)
 └── migrations/         # Alembic database migrations
 ```
 
@@ -130,6 +130,11 @@ STRIPE_SECRET_KEY=
 STRIPE_PUBLISHABLE_KEY=
 STRIPE_WEBHOOK_SECRET=
 
+# Stripe Connect Payouts (defaults to 90% dev / 10% platform / 0% fee on tips)
+PLATFORM_FEE_PERCENT=10.0
+DEV_PAYOUT_PERCENT=90.0
+TIP_PLATFORM_FEE_PERCENT=0.0
+
 # Email: Gmail with App Password (https://myaccount.google.com/apppasswords)
 MAIL_SERVER=smtp.gmail.com
 MAIL_PORT=587
@@ -180,16 +185,32 @@ The app will be available at **http://localhost:5000**.
 
 ---
 
-## Stripe Setup (local webhooks)
+## Stripe Setup & Automated Developer Payouts (Stripe Connect)
 
-To test purchase flows locally, forward Stripe webhook events to your dev server:
+sqush.io uses **Stripe Connect Express** for automated revenue sharing and payouts:
+- **Game Purchases & Gifts:** By default, 90% is paid out to the game developer, while 10% is retained by sqush.io as a platform fee (`PLATFORM_FEE_PERCENT=10.0`).
+- **Tip Jar:** 100% of tips go directly to the developer (`TIP_PLATFORM_FEE_PERCENT=0.0`).
+- **Single Item Checkouts:** Uses Stripe **Destination Charges** (`transfer_data.destination` + `application_fee_amount`) for direct settlements.
+- **Multi-Game Cart Checkouts:** Splits revenue across distinct developers via separate Stripe transfers (`stripe.Transfer.create`) after checkout completion.
+- **Retroactive Backlog Payouts:** If a developer hasn't onboarded with Stripe Connect yet, their earnings are recorded with `payout_status = 'pending'`. The moment they complete onboarding in `/dashboard/revenue`, all pending payouts are automatically transferred.
+
+> [!IMPORTANT]
+> **Activating Stripe Connect on your Stripe Account:**
+> Standard Stripe accounts do not have Connect enabled out of the box. To test developer payouts:
+> 1. Log in to your Stripe Dashboard at [dashboard.stripe.com](https://dashboard.stripe.com) and make sure **Test mode** is switched ON.
+> 2. Open [dashboard.stripe.com/connect](https://dashboard.stripe.com/connect) and click **"Get started with Connect"** (or "Aktivieren").
+> 3. Choose **Platform / Marketplace** and enable **Express** accounts. In test mode, you can skip formal business verification and test immediately.
+
+### Local Webhooks
+
+To test checkout fulfillment and Connect account sync locally, forward webhook events to your dev server:
 
 ```bash
 # Install the Stripe CLI (https://stripe.com/docs/stripe-cli)
-stripe listen --forward-to localhost:5000/checkout/webhook
+stripe listen --forward-to localhost:5000/checkout/webhook --events checkout.session.completed,account.updated
 ```
 
-Copy the webhook signing secret printed by the CLI and add it as `STRIPE_WEBHOOK_SECRET` in your `.env`.
+Copy the webhook signing secret printed by the CLI and set it as `STRIPE_WEBHOOK_SECRET` in your `.env`.
 
 ---
 
@@ -226,11 +247,14 @@ flask db downgrade
 Run tests using Python's built-in unittest runner:
 
 ```bash
-# Run all tests
+# Run all tests (all suites)
 python -m unittest discover -s tests
 
 # Run roadmap test suite
 python -m unittest tests/test_roadmap.py
+
+# Run Stripe Connect payout test suite
+python -m unittest tests/test_stripe_connect.py
 ```
 
 ---
