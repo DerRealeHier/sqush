@@ -1,11 +1,12 @@
 import json
 from datetime import datetime
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import current_user, login_required
+import stripe
 from extensions import db
 from models.user import User, Notification
 from models.game import Game, GameUpdate, Screenshot, Video, GameStats
-from models.commerce import Purchase, Wishlist
+from models.commerce import Purchase, Wishlist, Tip
 from models.bundle import Bundle, BundleGame, BundleCollaborator
 from services.auth_service import bundle_role
 from services.file_service import allowed_file, save_file, save_game_file
@@ -15,6 +16,14 @@ from services.game_service import (
     calculate_game_tips,
     update_daily_stats,
 )
+from services.payment_service import (
+    calculate_payout_split,
+    create_connect_onboarding_link,
+    create_connect_login_link,
+    sync_connect_account_status,
+    process_pending_payouts_for_developer,
+)
+import config
 
 developer_bp = Blueprint("developer", __name__)
 
@@ -513,11 +522,23 @@ def developer_revenue():
     if current_user.role != "dev":
         return "Access Denied. How could you?", 403
 
+    # Sync latest Stripe Connect account status if user has an account connected
+    if current_user.stripe_connect_id and config.STRIPE_SECRET_KEY:
+        try:
+            sync_connect_account_status(current_user)
+        except Exception:
+            pass
+
     my_games = Game.query.filter_by(developer_id=current_user.id).all()
+    my_game_ids = [g.id for g in my_games]
 
     revenue_data = []
     total_revenue = 0
     total_tips = 0
+    total_dev_payouts = 0.0
+    total_platform_fees = 0.0
+    pending_payout_amount = 0.0
+
     for game in my_games:
         game_revenue = calculate_game_revenue(game)
         game_tips = calculate_game_tips(game)
@@ -525,16 +546,78 @@ def developer_revenue():
         total_tips += game_tips
         sales_count = Purchase.query.filter_by(game_id=game.id, refunded=False).count()
         tips_count = Tip.query.filter_by(game_id=game.id).count()
+
+        split = calculate_payout_split(game_revenue)
+        game_dev_payout = split["dev_amount"]
+        game_fee = split["platform_fee"]
+
+        total_dev_payouts += game_dev_payout
+        total_platform_fees += game_fee
+
         revenue_data.append({
             "game": game,
             "revenue": game_revenue,
             "tips": game_tips,
-            "total_earned": game_revenue + game_tips,
+            "dev_payout": game_dev_payout,
+            "platform_fee": game_fee,
+            "total_earned": game_dev_payout + game_tips,
             "sales_count": sales_count,
             "tips_count": tips_count,
         })
 
-    # highest earner first. Don't give anything to these poor. (tips count too now :D)
+    # Query recent transactions for this developer's games
+    recent_purchases = (
+        Purchase.query.filter(Purchase.game_id.in_(my_game_ids), Purchase.refunded == False)
+        .order_by(Purchase.purchased_at.desc())
+        .limit(20)
+        .all()
+    ) if my_game_ids else []
+
+    transactions = []
+    for p in recent_purchases:
+        dev_cut = p.dev_payout_amount if p.dev_payout_amount is not None else calculate_payout_split(p.price_paid)["dev_amount"]
+        fee_cut = p.platform_fee_amount if p.platform_fee_amount is not None else calculate_payout_split(p.price_paid)["platform_fee"]
+        if p.payout_status == "unconnected":
+            pending_payout_amount += dev_cut
+
+        transactions.append({
+            "type": "sale",
+            "date": p.purchased_at,
+            "game_title": p.game.title if p.game else "Unknown Game",
+            "gross_amount": p.price_paid or 0.0,
+            "dev_amount": dev_cut,
+            "platform_fee": fee_cut,
+            "payout_status": p.payout_status or "pending",
+            "stripe_transfer_id": p.stripe_transfer_id,
+        })
+
+    # Recent tips for this developer
+    recent_tips = (
+        Tip.query.filter_by(developer_id=current_user.id)
+        .order_by(Tip.created_at.desc())
+        .limit(10)
+        .all()
+    )
+    for t in recent_tips:
+        dev_cut = t.dev_payout_amount if t.dev_payout_amount is not None else calculate_payout_split(t.amount, is_tip=True)["dev_amount"]
+        fee_cut = t.platform_fee_amount if t.platform_fee_amount is not None else calculate_payout_split(t.amount, is_tip=True)["platform_fee"]
+        if t.payout_status == "unconnected":
+            pending_payout_amount += dev_cut
+
+        transactions.append({
+            "type": "tip",
+            "date": t.created_at,
+            "game_title": f"Tip ({t.supporter_name})",
+            "gross_amount": t.amount,
+            "dev_amount": dev_cut,
+            "platform_fee": fee_cut,
+            "payout_status": t.payout_status or "pending",
+            "stripe_transfer_id": t.stripe_transfer_id,
+        })
+
+    # Sort combined transactions by date descending
+    transactions.sort(key=lambda x: x["date"] or datetime.min, reverse=True)
+
     revenue_data.sort(key=lambda x: x["total_earned"], reverse=True)
 
     return render_template(
@@ -542,4 +625,112 @@ def developer_revenue():
         revenue_data=revenue_data,
         total_revenue=total_revenue,
         total_tips=total_tips,
+        total_dev_payouts=total_dev_payouts,
+        total_platform_fees=total_platform_fees,
+        pending_payout_amount=pending_payout_amount,
+        transactions=transactions[:25],
+        dev_cut_percent=config.DEV_PAYOUT_PERCENT,
+        platform_cut_percent=config.PLATFORM_FEE_PERCENT,
+        stripe_configured=bool(config.STRIPE_SECRET_KEY),
     )
+
+
+# ---------------------------------------------------------------------------
+# Stripe Connect Developer Onboarding & Dashboard Routes
+# ---------------------------------------------------------------------------
+
+@developer_bp.route("/dashboard/stripe-connect/connect")
+@login_required
+def stripe_connect_onboard():
+    if current_user.role != "dev":
+        return "Access Denied", 403
+
+    if not config.STRIPE_SECRET_KEY:
+        flash("Stripe is not configured on this server yet. Add STRIPE_SECRET_KEY to test Connect.", "error")
+        return redirect(url_for("developer.developer_revenue"))
+
+    try:
+        refresh_url = url_for("developer.stripe_connect_refresh", _external=True)
+        return_url = url_for("developer.stripe_connect_return", _external=True)
+        onboarding_url = create_connect_onboarding_link(current_user, refresh_url, return_url)
+        return redirect(onboarding_url)
+    except stripe.error.InvalidRequestError as e:
+        err_msg = str(e)
+        if "signed up for Connect" in err_msg:
+            print("[Stripe Connect] Platform account has not enabled Connect at https://dashboard.stripe.com/connect")
+            flash(
+                "Stripe Connect has not been enabled on this Stripe account yet! "
+                "Please open https://dashboard.stripe.com/connect (in Test Mode) and click 'Get started' to activate Connect. "
+                "Once activated, try linking your account again.",
+                "error"
+            )
+        else:
+            print(f"[Stripe Connect] InvalidRequestError: {e}")
+            flash(f"Could not initialize Stripe Connect: {e}", "error")
+        return redirect(url_for("developer.developer_revenue"))
+    except Exception as e:
+        print(f"DEBUG: Stripe Connect onboarding error: {e}")
+        flash(f"Could not initialize Stripe Connect: {e}", "error")
+        return redirect(url_for("developer.developer_revenue"))
+
+
+@developer_bp.route("/dashboard/stripe-connect/return")
+@login_required
+def stripe_connect_return():
+    if current_user.role != "dev":
+        return "Access Denied", 403
+
+    try:
+        enabled = sync_connect_account_status(current_user)
+        if enabled:
+            payouts_count = process_pending_payouts_for_developer(current_user)
+            msg = "Stripe Connect is connected and payouts are active!"
+            if payouts_count > 0:
+                msg += f" {payouts_count} previous pending sales were automatically transferred to your account."
+            flash(msg, "success")
+        else:
+            flash("Stripe onboarding received. Finish verification with Stripe to enable automatic payouts.", "info")
+    except Exception as e:
+        print(f"DEBUG: Stripe Connect return error: {e}")
+        flash("An error occurred while verifying your Stripe status.", "error")
+
+    return redirect(url_for("developer.developer_revenue"))
+
+
+@developer_bp.route("/dashboard/stripe-connect/refresh")
+@login_required
+def stripe_connect_refresh():
+    if current_user.role != "dev":
+        return "Access Denied", 403
+
+    try:
+        refresh_url = url_for("developer.stripe_connect_refresh", _external=True)
+        return_url = url_for("developer.stripe_connect_return", _external=True)
+        onboarding_url = create_connect_onboarding_link(current_user, refresh_url, return_url)
+        return redirect(onboarding_url)
+    except Exception as e:
+        print(f"DEBUG: Stripe Connect refresh error: {e}")
+        flash("Onboarding session expired. Please click connect again.", "error")
+        return redirect(url_for("developer.developer_revenue"))
+
+
+@developer_bp.route("/dashboard/stripe-connect/dashboard")
+@login_required
+def stripe_connect_dashboard():
+    if current_user.role != "dev":
+        return "Access Denied", 403
+
+    if not current_user.stripe_connect_id:
+        flash("You have not connected a Stripe account yet.", "error")
+        return redirect(url_for("developer.developer_revenue"))
+
+    try:
+        login_url = create_connect_login_link(current_user)
+        if login_url:
+            return redirect(login_url)
+        flash("Could not open Stripe Express Dashboard.", "error")
+    except Exception as e:
+        print(f"DEBUG: Stripe Connect dashboard error: {e}")
+        flash(f"Stripe Dashboard error: {e}", "error")
+
+    return redirect(url_for("developer.developer_revenue"))

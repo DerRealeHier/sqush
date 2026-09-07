@@ -168,7 +168,7 @@
                     {% endif %}
                     {% endif %}
                     <a href="{{ url_for('game_detail', game_id=game.id) }}">
-                        <img src="{{ url_for('static', filename=game.image_path) }}" class="game-cover-img" alt="{{ game.title }}">
+                        <img src="{{ game.image_path | asset_v }}" class="game-cover-img" alt="{{ game.title }}">
                     </a>
                 </div>
                 <div class="p-3 text-center">

@@ -38,6 +38,11 @@ STRIPE_SECRET_KEY = stripe_keys["secret_key"]
 STRIPE_PUBLISHABLE_KEY = stripe_keys["publishable_key"]
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
 
+# Stripe Connect automated payout split percentages
+PLATFORM_FEE_PERCENT = float(os.environ.get("PLATFORM_FEE_PERCENT", "10.0"))  # 10% Sqush platform fee
+DEV_PAYOUT_PERCENT = float(os.environ.get("DEV_PAYOUT_PERCENT", "90.0"))     # 90% Developer cut
+TIP_PLATFORM_FEE_PERCENT = float(os.environ.get("TIP_PLATFORM_FEE_PERCENT", "0.0")) # 0% on tips (100% to dev)
+
 MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
 MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
 MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "true").lower() == "true"

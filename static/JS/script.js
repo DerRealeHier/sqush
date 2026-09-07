@@ -441,6 +441,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const storeNoMatchMsg = document.getElementById('storeNoMatchMessage');
     const genreActiveCount = document.getElementById('genreActiveCount');
     const tagActiveCount = document.getElementById('tagActiveCount');
+    const genreSearchInput = document.getElementById('genreSearchInput');
+    const tagSearchInput = document.getElementById('tagSearchInput');
+    const clearGenreSearchBtn = document.getElementById('clearGenreSearchBtn');
+    const clearTagSearchBtn = document.getElementById('clearTagSearchBtn');
+    const genrePillGroup = document.getElementById('genrePillGroup');
+    const tagPillGroup = document.getElementById('tagPillGroup');
+    const genrePillEmptyMsg = document.getElementById('genrePillEmptyMsg');
+    const tagPillEmptyMsg = document.getElementById('tagPillEmptyMsg');
+    const genrePillMatchesCount = document.getElementById('genrePillMatchesCount');
+    const tagPillMatchesCount = document.getElementById('tagPillMatchesCount');
 
     if (storeSearch && priceMinFilter && priceMaxFilter && saleFilter && rawGameItems.length > 0) {
         // Cache game item attributes in memory once to avoid DOM reads & JSON.parse on each keystroke
@@ -558,6 +568,78 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 60);
         }
 
+        function setupPillSearch(inputEl, clearBtn, groupEl, emptyMsgEl, countEl) {
+            if (!inputEl || !groupEl) return null;
+            const pills = groupEl.querySelectorAll('.filter-pill');
+
+            function filterPills() {
+                const q = inputEl.value.toLowerCase().trim();
+                if (clearBtn) {
+                    clearBtn.style.display = q ? 'block' : 'none';
+                    if (q) clearBtn.classList.remove('d-none');
+                    else clearBtn.classList.add('d-none');
+                }
+
+                let matches = 0;
+                pills.forEach(pill => {
+                    const label = pill.querySelector('label');
+                    const name = (pill.getAttribute('data-name') || (label ? label.textContent : pill.textContent)).toLowerCase().trim();
+                    const checkbox = pill.querySelector('input[type="checkbox"]');
+                    const isChecked = checkbox && checkbox.checked;
+
+                    if (!q || name.includes(q) || isChecked) {
+                        pill.style.display = 'inline-flex';
+                        pill.classList.remove('d-none');
+                        if (!q || name.includes(q)) matches++;
+                    } else {
+                        pill.style.display = 'none';
+                        pill.classList.add('d-none');
+                    }
+                });
+
+                if (emptyMsgEl) {
+                    const showEmpty = q && matches === 0;
+                    emptyMsgEl.style.display = showEmpty ? 'block' : 'none';
+                    if (showEmpty) emptyMsgEl.classList.remove('d-none');
+                    else emptyMsgEl.classList.add('d-none');
+                }
+
+                if (countEl) {
+                    if (q) {
+                        countEl.textContent = `(${matches} found)`;
+                        countEl.style.display = 'inline';
+                        countEl.classList.remove('d-none');
+                    } else {
+                        countEl.style.display = 'none';
+                        countEl.classList.add('d-none');
+                    }
+                }
+            }
+
+            inputEl.addEventListener('input', filterPills);
+            inputEl.addEventListener('keyup', filterPills);
+            inputEl.addEventListener('change', filterPills);
+            inputEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    inputEl.value = '';
+                    filterPills();
+                }
+            });
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    inputEl.value = '';
+                    inputEl.focus();
+                    filterPills();
+                });
+            }
+
+            return filterPills;
+        }
+
+        const resetGenrePills = setupPillSearch(genreSearchInput, clearGenreSearchBtn, genrePillGroup, genrePillEmptyMsg, genrePillMatchesCount);
+        const resetTagPills = setupPillSearch(tagSearchInput, clearTagSearchBtn, tagPillGroup, tagPillEmptyMsg, tagPillMatchesCount);
+
         storeSearch.addEventListener('input', scheduleStoreFilters);
         priceMinFilter.addEventListener('input', scheduleStoreFilters);
         priceMaxFilter.addEventListener('input', scheduleStoreFilters);
@@ -573,6 +655,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 saleFilter.checked = false;
                 genreCheckboxes.forEach(cb => cb.checked = false);
                 tagCheckboxes.forEach(cb => cb.checked = false);
+                if (genreSearchInput) genreSearchInput.value = '';
+                if (tagSearchInput) tagSearchInput.value = '';
+                if (resetGenrePills) resetGenrePills();
+                if (resetTagPills) resetTagPills();
                 applyStoreFilters();
             });
         }

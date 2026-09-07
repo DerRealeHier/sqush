@@ -16,7 +16,11 @@ class Purchase(db.Model):
     # Refund state. Keep the purchase row so payment history is not destroyed.
     refunded = db.Column(db.Boolean, default=False, nullable=False)
     refunded_at = db.Column(db.DateTime, nullable=True)
-    stripe_refund_id = db.Column(db.String(255), nullable=True, unique=True)
+    # Stripe Connect payout tracking
+    dev_payout_amount = db.Column(db.Float, nullable=True)     # e.g. 90% of price_paid
+    platform_fee_amount = db.Column(db.Float, nullable=True)   # e.g. 10% of price_paid
+    stripe_transfer_id = db.Column(db.String(255), nullable=True) # Stripe Transfer ID (tr_xxx)
+    payout_status = db.Column(db.String(50), default="pending")   # 'direct', 'transferred', 'pending', 'unconnected'
 
     game = db.relationship("Game", backref="purchases")
 
@@ -73,6 +77,11 @@ class Tip(db.Model):
     supporter_name = db.Column(db.String(64), nullable=True)
     stripe_checkout_session_id = db.Column(db.String(255), nullable=True, unique=True)
     stripe_payment_intent_id = db.Column(db.String(255), nullable=True)
+    # Stripe Connect payout tracking for tips
+    dev_payout_amount = db.Column(db.Float, nullable=True)
+    platform_fee_amount = db.Column(db.Float, nullable=True)
+    stripe_transfer_id = db.Column(db.String(255), nullable=True)
+    payout_status = db.Column(db.String(50), default="pending")
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     tipper = db.relationship("User", foreign_keys=[user_id], backref="tips_sent")

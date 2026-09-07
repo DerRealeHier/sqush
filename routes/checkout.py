@@ -8,7 +8,14 @@ from models.game import Game
 from models.commerce import Purchase, Gift, Tip
 from models.bundle import Bundle
 from services.game_service import calculate_display_price, update_daily_stats
-from services.payment_service import fulfill_checkout, fulfill_gift, fulfill_tip, _extract_metadata
+from services.payment_service import (
+    fulfill_checkout,
+    fulfill_gift,
+    fulfill_tip,
+    _extract_metadata,
+    calculate_payout_split,
+    process_pending_payouts_for_developer,
+)
 import config
 
 checkout_bp = Blueprint("checkout", __name__)
@@ -37,20 +44,20 @@ def create_checkout_session(game_id):
     unit_amount = int(round(display_price * 100))
 
     try:
-        checkout_session = stripe.checkout.Session.create(
-            success_url=(
+        session_params = {
+            "success_url": (
                 url_for("success", game_id=game.id, _external=True)
                 + "?session_id={CHECKOUT_SESSION_ID}"
             ),
-            cancel_url=url_for("game_detail", game_id=game.id, _external=True),
-            payment_method_types=["card"],
-            mode="payment",
-            client_reference_id=str(current_user.id),
-            metadata={
+            "cancel_url": url_for("game_detail", game_id=game.id, _external=True),
+            "payment_method_types": ["card"],
+            "mode": "payment",
+            "client_reference_id": str(current_user.id),
+            "metadata": {
                 "user_id": str(current_user.id),
                 "game_id": str(game.id),
             },
-            line_items=[
+            "line_items": [
                 {
                     "price_data": {
                         "currency": "eur",
@@ -61,8 +68,23 @@ def create_checkout_session(game_id):
                     },
                     "quantity": 1,
                 }
-            ]
-        )
+            ],
+        }
+
+        # Automated Dev Payout: If dev has Stripe Connect with payouts enabled, split automatically!
+        dev_user = game.user
+        if dev_user and dev_user.stripe_connect_id and dev_user.stripe_connect_payouts_enabled and unit_amount > 0:
+            split = calculate_payout_split(display_price)
+            fee_cents = split["platform_fee_cents"]
+            session_params["payment_intent_data"] = {
+                "application_fee_amount": fee_cents,
+                "transfer_data": {
+                    "destination": dev_user.stripe_connect_id,
+                },
+            }
+            session_params["metadata"]["is_destination_charge"] = "true"
+
+        checkout_session = stripe.checkout.Session.create(**session_params)
 
         return jsonify({"sessionId": checkout_session.id})
 
@@ -150,23 +172,23 @@ def create_gift_checkout_session(game_id):
     stripe.api_key = config.stripe_keys["secret_key"]
 
     try:
-        checkout_session = stripe.checkout.Session.create(
-            success_url=(
+        session_params = {
+            "success_url": (
                 url_for("gift_success", game_id=game.id, _external=True)
                 + "?session_id={CHECKOUT_SESSION_ID}"
             ),
-            cancel_url=url_for("gift_page", game_id=game.id, _external=True),
-            payment_method_types=["card"],
-            mode="payment",
-            client_reference_id=str(current_user.id),
-            metadata={
+            "cancel_url": url_for("gift_page", game_id=game.id, _external=True),
+            "payment_method_types": ["card"],
+            "mode": "payment",
+            "client_reference_id": str(current_user.id),
+            "metadata": {
                 "purchase_type": "gift",
                 "user_id":       str(current_user.id),   # sender (pays)
                 "recipient_id":  str(recipient.id),       # recipient (gets the game)
                 "game_id":       str(game.id),
                 "gift_message":  gift_message,
             },
-            line_items=[{
+            "line_items": [{
                 "price_data": {
                     "currency": "eur",
                     "product_data": {
@@ -176,7 +198,22 @@ def create_gift_checkout_session(game_id):
                 },
                 "quantity": 1,
             }],
-        )
+        }
+
+        # Automated Dev Payout for gift purchases
+        dev_user = game.user
+        if dev_user and dev_user.stripe_connect_id and dev_user.stripe_connect_payouts_enabled and unit_amount > 0:
+            split = calculate_payout_split(unit_amount / 100.0)
+            fee_cents = split["platform_fee_cents"]
+            session_params["payment_intent_data"] = {
+                "application_fee_amount": fee_cents,
+                "transfer_data": {
+                    "destination": dev_user.stripe_connect_id,
+                },
+            }
+            session_params["metadata"]["is_destination_charge"] = "true"
+
+        checkout_session = stripe.checkout.Session.create(**session_params)
         return jsonify({"sessionId": checkout_session.id})
     except stripe.error.StripeError as e:
         print(f"DEBUG: Stripe gift checkout error: {e}")
@@ -286,16 +323,16 @@ def create_tip_checkout_session(game_id):
     try:
         user_id_str = str(current_user.id) if current_user.is_authenticated else ""
         dev_username = game.user.username if game.user else "Developer"
-        checkout_session = stripe.checkout.Session.create(
-            success_url=(
+        session_params = {
+            "success_url": (
                 url_for("checkout.tip_success", game_id=game.id, _external=True)
                 + "?session_id={CHECKOUT_SESSION_ID}"
             ),
-            cancel_url=url_for("game_detail", game_id=game.id, _external=True),
-            payment_method_types=["card"],
-            mode="payment",
-            client_reference_id=user_id_str,
-            metadata={
+            "cancel_url": url_for("game_detail", game_id=game.id, _external=True),
+            "payment_method_types": ["card"],
+            "mode": "payment",
+            "client_reference_id": user_id_str,
+            "metadata": {
                 "purchase_type": "tip",
                 "user_id": user_id_str,
                 "developer_id": str(game.developer_id),
@@ -304,7 +341,7 @@ def create_tip_checkout_session(game_id):
                 "tip_message": message,
                 "supporter_name": supporter_name,
             },
-            line_items=[{
+            "line_items": [{
                 "price_data": {
                     "currency": "eur",
                     "product_data": {
@@ -314,7 +351,22 @@ def create_tip_checkout_session(game_id):
                 },
                 "quantity": 1,
             }],
-        )
+        }
+
+        # Automated Dev Payout for tips
+        dev_user = game.user
+        if dev_user and dev_user.stripe_connect_id and dev_user.stripe_connect_payouts_enabled and unit_amount > 0:
+            split = calculate_payout_split(amount, is_tip=True)
+            fee_cents = split["platform_fee_cents"]
+            session_params["payment_intent_data"] = {
+                "application_fee_amount": fee_cents,
+                "transfer_data": {
+                    "destination": dev_user.stripe_connect_id,
+                },
+            }
+            session_params["metadata"]["is_destination_charge"] = "true"
+
+        checkout_session = stripe.checkout.Session.create(**session_params)
         return jsonify({"sessionId": checkout_session.id})
     except stripe.error.StripeError as e:
         print(f"DEBUG: Stripe tip error: {e}")
@@ -462,6 +514,20 @@ def stripe_webhook():
                 purchase.refunded = True
                 purchase.refunded_at = datetime.now(timezone.utc)
                 db.session.commit()
+
+        elif event["type"] == "account.updated":
+            account = event["data"]["object"]
+            acct_id = getattr(account, "id", None) or (account.get("id") if isinstance(account, dict) else None)
+            if acct_id:
+                user = User.query.filter_by(stripe_connect_id=acct_id).first()
+                if user:
+                    was_enabled = bool(user.stripe_connect_payouts_enabled)
+                    user.stripe_connect_payouts_enabled = bool(getattr(account, "payouts_enabled", False) or (account.get("payouts_enabled", False) if isinstance(account, dict) else False))
+                    user.stripe_connect_details_submitted = bool(getattr(account, "details_submitted", False) or (account.get("details_submitted", False) if isinstance(account, dict) else False))
+                    user.stripe_connect_charges_enabled = bool(getattr(account, "charges_enabled", False) or (account.get("charges_enabled", False) if isinstance(account, dict) else False))
+                    db.session.commit()
+                    if not was_enabled and user.stripe_connect_payouts_enabled:
+                        process_pending_payouts_for_developer(user)
 
     except Exception as e:
         # Return 500 so Stripe can retry the webhook when something failed. It shouldn't happen though.

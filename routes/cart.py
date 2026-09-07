@@ -167,6 +167,9 @@ def create_cart_checkout_session():
                 "user_id": str(current_user.id),
                 "cart_game_ids": json.dumps([g.id for g in games]),
             },
+            payment_intent_data={
+                "transfer_group": f"cart_{current_user.id}_{int(round(sum(g.display_price for g in games) * 100))}",
+            },
             line_items=line_items,
         )
         return jsonify({"sessionId": checkout_session.id})

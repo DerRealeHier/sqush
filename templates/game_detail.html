@@ -345,11 +345,11 @@
             {% endif %}
 
             <div class="carousel-item {% if not vp %}active{% endif %}">
-                <img src="{{ url_for('static', filename=game.image_path) }}">
+                <img src="{{ game.image_path | asset_v }}">
             </div>
             {% for sc in screenshots %}
             <div class="carousel-item">
-                <img src="{{ url_for('static', filename=sc.image_path) }}">
+                <img src="{{ sc.image_path | asset_v }}">
             </div>
             {% endfor %}
             {% for vid in videos %}

@@ -104,9 +104,26 @@ def create_app(config_override=None):
     # Static asset caching headers
     @app.after_request
     def add_caching_headers(response):
-        if request.path.startswith("/static/"):
-            response.headers["Cache-Control"] = "public, max-age=86400"
+        if request.path.startswith("/static/uploads/"):
+            # Never cache uploads aggressively so replaced covers/avatars update immediately
+            response.headers["Cache-Control"] = "no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        elif request.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "public, max-age=3600"
         return response
+
+    @app.template_filter("asset_v")
+    def asset_version_filter(filename):
+        if not filename:
+            return ""
+        rel_path = filename.lstrip("/\\")
+        full_path = os.path.join(app.root_path, "static", rel_path)
+        try:
+            mtime = int(os.path.getmtime(full_path))
+            return f"{url_for('static', filename=rel_path)}?v={mtime}"
+        except Exception:
+            return url_for("static", filename=rel_path)
 
     # Context processors
     @app.context_processor
@@ -118,6 +135,7 @@ def create_app(config_override=None):
             "cart_token": _generate_cart_token(),
             "get_featured_badge": get_featured_badge,
             "get_user_badges": get_user_badges,
+            "asset_v": asset_version_filter,
         }
         if current_user.is_authenticated:
             try:
@@ -224,14 +242,46 @@ with app.app_context():
     try:
         from sqlalchemy import text, inspect
         inspector = inspect(db.engine)
-        if "user" in inspector.get_table_names():
+        table_names = inspector.get_table_names()
+        if "user" in table_names:
             columns = [c["name"] for c in inspector.get_columns("user")]
             if "created_at" not in columns:
                 db.session.execute(text("ALTER TABLE user ADD COLUMN created_at DATETIME"))
             if "featured_badge_key" not in columns:
                 db.session.execute(text("ALTER TABLE user ADD COLUMN featured_badge_key VARCHAR(50)"))
-            
-            indexes = [
+            if "stripe_connect_id" not in columns:
+                db.session.execute(text("ALTER TABLE user ADD COLUMN stripe_connect_id VARCHAR(255)"))
+            if "stripe_connect_payouts_enabled" not in columns:
+                db.session.execute(text("ALTER TABLE user ADD COLUMN stripe_connect_payouts_enabled BOOLEAN DEFAULT 0"))
+            if "stripe_connect_details_submitted" not in columns:
+                db.session.execute(text("ALTER TABLE user ADD COLUMN stripe_connect_details_submitted BOOLEAN DEFAULT 0"))
+            if "stripe_connect_charges_enabled" not in columns:
+                db.session.execute(text("ALTER TABLE user ADD COLUMN stripe_connect_charges_enabled BOOLEAN DEFAULT 0"))
+
+        if "purchase" in table_names:
+            p_cols = [c["name"] for c in inspector.get_columns("purchase")]
+            if "dev_payout_amount" not in p_cols:
+                db.session.execute(text("ALTER TABLE purchase ADD COLUMN dev_payout_amount FLOAT"))
+            if "platform_fee_amount" not in p_cols:
+                db.session.execute(text("ALTER TABLE purchase ADD COLUMN platform_fee_amount FLOAT"))
+            if "stripe_transfer_id" not in p_cols:
+                db.session.execute(text("ALTER TABLE purchase ADD COLUMN stripe_transfer_id VARCHAR(255)"))
+            if "payout_status" not in p_cols:
+                db.session.execute(text("ALTER TABLE purchase ADD COLUMN payout_status VARCHAR(50) DEFAULT 'pending'"))
+
+        if "tip" in table_names:
+            t_cols = [c["name"] for c in inspector.get_columns("tip")]
+            if "dev_payout_amount" not in t_cols:
+                db.session.execute(text("ALTER TABLE tip ADD COLUMN dev_payout_amount FLOAT"))
+            if "platform_fee_amount" not in t_cols:
+                db.session.execute(text("ALTER TABLE tip ADD COLUMN platform_fee_amount FLOAT"))
+            if "stripe_transfer_id" not in t_cols:
+                db.session.execute(text("ALTER TABLE tip ADD COLUMN stripe_transfer_id VARCHAR(255)"))
+            if "payout_status" not in t_cols:
+                db.session.execute(text("ALTER TABLE tip ADD COLUMN payout_status VARCHAR(50) DEFAULT 'pending'"))
+        db.session.commit()
+
+        indexes = [
                 ("idx_game_dev", "game", "developer_id"),
                 ("idx_game_sale", "game", "is_on_sale"),
                 ("idx_game_update_game", "game_update", "game_id"),
@@ -260,14 +310,14 @@ with app.app_context():
                 ("idx_roadmap_vote_item", "roadmap_vote", "item_id"),
                 ("idx_roadmap_vote_user", "roadmap_vote", "user_id"),
                 ("idx_roadmap_comment_item", "roadmap_comment", "item_id"),
-            ]
-            for idx_name, tbl, col in indexes:
-                try:
-                    db.session.execute(text(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {tbl} ({col})"))
-                except Exception:
-                    pass
+        ]
+        for idx_name, tbl, col in indexes:
+            try:
+                db.session.execute(text(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {tbl} ({col})"))
+            except Exception:
+                pass
 
-            db.session.commit()
+        db.session.commit()
     except Exception as e:
         print(f"DEBUG: SQLite column check notice: {e}")
 

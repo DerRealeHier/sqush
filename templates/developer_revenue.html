@@ -109,34 +109,101 @@
 </nav>
 
 <div class="container py-4">
+    <!-- Flashed messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="mb-4">
+        {% for category, msg in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else ('info' if category == 'info' else 'danger') }} border-3 border-dark fw-bold shadow">
+            {{ msg }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <h2 class="text-warning mb-0"><i class="bi bi-cash-stack"></i> REVENUE & TIPS OVERVIEW</h2>
+        <h2 class="text-warning mb-0"><i class="bi bi-cash-stack"></i> REVENUE & AUTOMATED PAYOUTS</h2>
         <a href="{{ url_for('developer_dashboard') }}" class="back-btn"><i class="bi bi-arrow-left"></i> BACK TO DASHBOARD</a>
+    </div>
+
+    <!-- Stripe Connect Status Card -->
+    <div class="dev-panel mb-4" style="border-left: 10px solid {% if current_user.stripe_connect_payouts_enabled %}var(--green){% elif current_user.stripe_connect_id %}var(--yellow){% else %}#888{% endif %};">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h4 class="mb-0 text-white"><i class="bi bi-stripe"></i> STRIPE CONNECT (AUTOMATED PAYOUTS)</h4>
+                    {% if current_user.stripe_connect_payouts_enabled %}
+                    <span class="badge bg-success text-dark fw-bold border border-dark"><i class="bi bi-check-circle-fill"></i> PAYOUTS ACTIVE</span>
+                    {% elif current_user.stripe_connect_id %}
+                    <span class="badge bg-warning text-dark fw-bold border border-dark"><i class="bi bi-hourglass-split"></i> SETUP INCOMPLETE</span>
+                    {% else %}
+                    <span class="badge bg-secondary text-white fw-bold border border-dark"><i class="bi bi-link-45deg"></i> NOT CONNECTED</span>
+                    {% endif %}
+                </div>
+                <p class="mb-0 text-white-50" style="max-width: 720px;">
+                    {% if current_user.stripe_connect_payouts_enabled %}
+                    Your Stripe Express account is fully verified! On every game sale, your <strong>{{ dev_cut_percent|int }}% revenue cut</strong> is automatically deposited into your bank account via Stripe. Sqush retains a {{ platform_cut_percent|int }}% platform fee.
+                    {% elif current_user.stripe_connect_id %}
+                    You've started connecting your Stripe account. Please finish onboarding to enable automated bank transfers for your sales.
+                    {% else %}
+                    Automate your earnings! Connect your bank account once with Stripe Express. Your <strong>{{ dev_cut_percent|int }}% share</strong> will be transferred automatically on every purchase without manual payout requests.
+                    {% endif %}
+                </p>
+                {% if pending_payout_amount and pending_payout_amount > 0 %}
+                <div class="mt-2 text-warning fw-bold">
+                    <i class="bi bi-exclamation-triangle-fill"></i> You have <strong>{{ "%.2f"|format(pending_payout_amount) }}€</strong> in pending earnings waiting to be transferred once onboarding is completed!
+                </div>
+                {% endif %}
+            </div>
+            <div>
+                {% if current_user.stripe_connect_payouts_enabled %}
+                <a href="{{ url_for('developer.stripe_connect_dashboard') }}" class="btn btn-warning fw-bold border-3 border-dark shadow text-dark px-3 py-2">
+                    <i class="bi bi-box-arrow-up-right"></i> Open Stripe Dashboard
+                </a>
+                {% elif current_user.stripe_connect_id %}
+                <a href="{{ url_for('developer.stripe_connect_onboard') }}" class="btn btn-warning fw-bold border-3 border-dark shadow text-dark px-3 py-2">
+                    <i class="bi bi-arrow-repeat"></i> Complete Stripe Setup
+                </a>
+                {% else %}
+                <a href="{{ url_for('developer.stripe_connect_onboard') }}" class="btn btn-warning fw-bold border-3 border-dark shadow text-dark px-3 py-2">
+                    <i class="bi bi-stripe"></i> Connect Stripe Account
+                </a>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
     <!-- Summary stats -->
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3 col-sm-6">
             <div class="stat-card">
-                <div class="stat-number text-success">{{ "%.2f"|format(total_revenue) }}€</div>
-                <div class="stat-label"><i class="bi bi-bag-check-fill"></i> Game Sales Revenue</div>
+                <div class="stat-number text-white">{{ "%.2f"|format(total_revenue) }}€</div>
+                <div class="stat-label"><i class="bi bi-cart-check"></i> Gross Sales</div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card" style="border-color: var(--green);">
+                <div class="stat-number text-success">{{ "%.2f"|format(total_dev_payouts) }}€</div>
+                <div class="stat-label"><i class="bi bi-cash"></i> Dev Payouts ({{ dev_cut_percent|int }}%)</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-number text-info">{{ "%.2f"|format(total_platform_fees) }}€</div>
+                <div class="stat-label"><i class="bi bi-pie-chart-fill"></i> Sqush Cut ({{ platform_cut_percent|int }}%)</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
             <div class="stat-card">
                 <div class="stat-number text-warning">{{ "%.2f"|format(total_tips) }}€</div>
-                <div class="stat-label"><i class="bi bi-cup-hot-fill"></i> Tip Jar Donations</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stat-card" style="border-color: var(--yellow);">
-                <div class="stat-number" style="color: var(--blue);">{{ "%.2f"|format(total_revenue + total_tips) }}€</div>
-                <div class="stat-label"><i class="bi bi-trophy-fill"></i> Total Earned Combined</div>
+                <div class="stat-label"><i class="bi bi-cup-hot-fill"></i> Tip Jar (100% Dev)</div>
             </div>
         </div>
     </div>
 
-    <div class="dev-panel">
+    <!-- Breakdown by Game -->
+    <div class="dev-panel mb-4">
         <h4 class="text-warning mb-4"><i class="bi bi-joystick"></i> Breakdown by Game</h4>
 
         {% if revenue_data and revenue_data|length > 0 %}
@@ -144,7 +211,7 @@
         <div class="revenue-row">
             <div class="d-flex align-items-center gap-3">
                 {% if row.game.image_path %}
-                <img src="{{ url_for('static', filename=row.game.image_path) }}" class="thumb-frame" alt="{{ row.game.title }}">
+                <img src="{{ row.game.image_path | asset_v }}" class="thumb-frame" alt="{{ row.game.title }}">
                 {% endif %}
                 <div>
                     <a href="{{ url_for('game_detail', game_id=row.game.id) }}" class="text-decoration-none">
@@ -158,15 +225,19 @@
 
             <div class="d-flex align-items-center gap-3 flex-wrap">
                 <div class="text-end">
-                    <div class="small text-white-50">Sales Revenue</div>
-                    <div class="fw-bold text-success fs-5">{{ "%.2f"|format(row.revenue) }}€</div>
+                    <div class="small text-white-50">Gross Sales</div>
+                    <div class="fw-bold text-white fs-6">{{ "%.2f"|format(row.revenue) }}€</div>
+                </div>
+                <div class="text-end">
+                    <div class="small text-white-50">Dev Cut ({{ dev_cut_percent|int }}%)</div>
+                    <div class="fw-bold text-success fs-5">{{ "%.2f"|format(row.dev_payout) }}€</div>
                 </div>
                 <div class="text-end">
                     <div class="small text-white-50">Tip Jar</div>
                     <div class="fw-bold text-warning fs-5">{{ "%.2f"|format(row.tips) }}€</div>
                 </div>
                 <div class="text-end ps-3" style="border-left: 2px solid #444;">
-                    <div class="small text-white-50">Total</div>
+                    <div class="small text-white-50">Total Earned</div>
                     <div class="fw-bold text-info fs-4 comic-font">{{ "%.2f"|format(row.total_earned) }}€</div>
                 </div>
                 <a href="{{ url_for('game_stats', game_id=row.game.id) }}" class="btn edit-btn btn-sm ms-2" style="background: var(--blue);">
@@ -181,6 +252,55 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- Recent Payout Transactions -->
+    {% if transactions and transactions|length > 0 %}
+    <div class="dev-panel">
+        <h4 class="text-warning mb-4"><i class="bi bi-clock-history"></i> Recent Transactions & Automated Payouts</h4>
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0" style="border: 2px solid #000;">
+                <thead>
+                    <tr style="background: #252525; border-bottom: 2px solid #000;">
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Game / Item</th>
+                        <th>Gross (€)</th>
+                        <th>Your Share ({{ dev_cut_percent|int }}%)</th>
+                        <th>Sqush Fee ({{ platform_cut_percent|int }}%)</th>
+                        <th>Payout Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                    <tr>
+                        <td class="text-white-50 small">{{ tx.date.strftime("%d.%m.%Y %H:%M") if tx.date else "-" }}</td>
+                        <td>
+                            {% if tx.type == "sale" %}
+                            <span class="badge bg-primary text-white"><i class="bi bi-bag"></i> Sale</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-cup-hot-fill"></i> Tip</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold">{{ tx.game_title }}</td>
+                        <td>{{ "%.2f"|format(tx.gross_amount) }}€</td>
+                        <td class="text-success fw-bold">+{{ "%.2f"|format(tx.dev_amount) }}€</td>
+                        <td class="text-white-50">{{ "%.2f"|format(tx.platform_fee) }}€</td>
+                        <td>
+                            {% if tx.payout_status == "direct" or tx.payout_status == "transferred" %}
+                            <span class="badge bg-success text-dark"><i class="bi bi-check-all"></i> Paid (Stripe)</span>
+                            {% elif tx.payout_status == "unconnected" %}
+                            <span class="badge bg-secondary"><i class="bi bi-hourglass"></i> Pending Connect</span>
+                            {% else %}
+                            <span class="badge bg-info text-dark"><i class="bi bi-arrow-repeat"></i> {{ tx.payout_status|capitalize }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 </div>
 </body>
 </html>

@@ -31,6 +31,12 @@ class User(UserMixin, db.Model):
     needs_username_setup = db.Column(db.Boolean, default=False)  # True right after a fresh Google signup, until they pick their own name
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     featured_badge_key = db.Column(db.String(50), nullable=True)  # badge key user chooses to showcase
+
+    # Stripe Connect (Express) fields for automated developer payouts
+    stripe_connect_id = db.Column(db.String(255), nullable=True, unique=True)
+    stripe_connect_payouts_enabled = db.Column(db.Boolean, default=False)
+    stripe_connect_details_submitted = db.Column(db.Boolean, default=False)
+    stripe_connect_charges_enabled = db.Column(db.Boolean, default=False)
     followed = db.relationship("User", secondary=Friendship.__table__,
                                primaryjoin=(Friendship.sender_id == id),
                                secondaryjoin=(Friendship.receiver_id == id),
