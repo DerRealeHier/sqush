@@ -28,8 +28,9 @@ def mail_health():
     mail_server = current_app.config.get("MAIL_SERVER") or config.MAIL_SERVER
 
     to_email = request.args.get("to")
+    auth_token = request.args.get("token")
     send_result = None
-    if to_email:
+    if to_email and (auth_token == config.SECRET_KEY or (current_user.is_authenticated and getattr(current_user, "is_admin", False))):
         from services.mail_service import send_email
         try:
             success = send_email(to_email, "Sqush Mail Test", "<h1>It works!</h1><p>Test from Sqush platform</p>")
