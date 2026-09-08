@@ -1,4 +1,4 @@
-// sqush.io frontend interactions (optimized for smooth 60fps rendering)
+// sqush frontend interactions (optimized for smooth 60fps rendering)
 
 // =========================================================================
 // Dynamic Day / Night Pixel Art Banner (Version 2 = Day, Version 1 = Night)

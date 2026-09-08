@@ -1,6 +1,6 @@
-# sqush.io
+# sqush
 
-**sqush.io** is an open source indie game store platform. Think itch.io, but with a better user experience and more fun to use. Developers can publish and sell their games, players can browse, buy, review, gift games and message each other or game developers, and everyone can connect socially.
+**sqush** is an open source indie game store platform. Think itch.io, but with a better user experience and more fun to use. Developers can publish and sell their games, players can browse, buy, review, gift games and message each other or game developers, and everyone can connect socially.
 
 ---
 
@@ -41,7 +41,7 @@
 ## Project Structure
 
 ```
-sqush.io/
+sqush/
 ├── app.py              # App factory & entry point
 ├── config.py           # All config loaded from .env
 ├── extensions.py       # Flask extension instances (db, login, mail, stripe, firebase, ...)
@@ -94,8 +94,8 @@ sqush.io/
 ### 2. Clone & create virtual environment
 
 ```bash
-git clone https://github.com/your-org/sqush.io.git
-cd sqush.io
+git clone https://github.com/DerRealeHier/sqush.git
+cd sqush
 
 python -m venv .venv
 
@@ -187,8 +187,8 @@ The app will be available at **http://localhost:5000**.
 
 ## Stripe Setup & Automated Developer Payouts (Stripe Connect)
 
-sqush.io uses **Stripe Connect Express** for automated revenue sharing and payouts:
-- **Game Purchases & Gifts:** By default, 90% is paid out to the game developer, while 10% is retained by sqush.io as a platform fee (`PLATFORM_FEE_PERCENT=10.0`).
+sqush uses **Stripe Connect Express** for automated revenue sharing and payouts:
+- **Game Purchases & Gifts:** By default, 90% is paid out to the game developer, while 10% is retained by sqush as a platform fee (`PLATFORM_FEE_PERCENT=10.0`).
 - **Tip Jar:** 100% of tips go directly to the developer (`TIP_PLATFORM_FEE_PERCENT=0.0`).
 - **Single Item Checkouts:** Uses Stripe **Destination Charges** (`transfer_data.destination` + `application_fee_amount`) for direct settlements.
 - **Multi-Game Cart Checkouts:** Splits revenue across distinct developers via separate Stripe transfers (`stripe.Transfer.create`) after checkout completion.

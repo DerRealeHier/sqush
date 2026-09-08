@@ -9,7 +9,7 @@ BADGE_DEFINITIONS = {
     "day_one": {
         "key": "day_one",
         "name": "Day One",
-        "description": "Joined sqush.io during the early launch era",
+        "description": "Joined sqush during the early launch era",
         "icon": "bi-stars",
         "color": "#ffe14d",
         "category": "veteran",
@@ -32,7 +32,7 @@ BADGE_DEFINITIONS = {
     "whale": {
         "key": "whale",
         "name": "Sqush Whale",
-        "description": "Spent 100.00€+ supporting creators on sqush.io",
+        "description": "Spent 100.00€+ supporting creators on sqush",
         "icon": "bi-gem",
         "color": "#9b51e0",
         "category": "spending",
@@ -55,7 +55,7 @@ BADGE_DEFINITIONS = {
     "game_dev": {
         "key": "game_dev",
         "name": "Game Dev",
-        "description": "Published at least one game on sqush.io",
+        "description": "Published at least one game on sqush",
         "icon": "bi-controller",
         "color": "#3aa0ff",
         "category": "creator",
@@ -75,7 +75,7 @@ BADGE_DEFINITIONS = {
     "generous": {
         "key": "generous",
         "name": "Generous Soul",
-        "description": "Gifted a game to another sqush.io player",
+        "description": "Gifted a game to another sqush player",
         "icon": "bi-gift-fill",
         "color": "#ff3b30",
         "category": "social",

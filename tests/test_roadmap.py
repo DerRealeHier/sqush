@@ -23,7 +23,7 @@ class RoadmapTestCase(unittest.TestCase):
             # Create Developer User (2FA disabled for simple testing)
             self.dev = User(
                 username="testdev",
-                email="dev@sqush.io",
+                email="dev@sqush.dev",
                 role="dev",
                 email_verified=True,
                 two_fa_enabled=False,
@@ -34,7 +34,7 @@ class RoadmapTestCase(unittest.TestCase):
             # Create Community Player User
             self.player = User(
                 username="testplayer",
-                email="player@sqush.io",
+                email="player@sqush.dev",
                 role="user",
                 email_verified=True,
                 two_fa_enabled=False,
@@ -45,7 +45,7 @@ class RoadmapTestCase(unittest.TestCase):
             # Create another Player User
             self.other_player = User(
                 username="otherplayer",
-                email="other@sqush.io",
+                email="other@sqush.dev",
                 role="user",
                 email_verified=True,
                 two_fa_enabled=False,

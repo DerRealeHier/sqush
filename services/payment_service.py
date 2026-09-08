@@ -95,7 +95,7 @@ def get_or_create_connect_account(user, country="DE"):
         metadata={
             "user_id": str(user.id),
             "username": user.username,
-            "platform": "sqush.io",
+            "platform": "sqush",
         },
     )
 

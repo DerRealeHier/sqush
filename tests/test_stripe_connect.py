@@ -32,7 +32,7 @@ class StripeConnectTestCase(unittest.TestCase):
         # Create developer user
         self.dev = User(
             username="test_developer",
-            email="dev@sqush.io",
+            email="dev@sqush.dev",
             role="dev",
             stripe_connect_id="acct_test123",
             stripe_connect_payouts_enabled=True,
@@ -44,7 +44,7 @@ class StripeConnectTestCase(unittest.TestCase):
         # Create buyer user
         self.buyer = User(
             username="test_buyer",
-            email="buyer@sqush.io",
+            email="buyer@sqush.dev",
             role="user",
         )
         self.buyer.set_password("BuyerPass123!")
