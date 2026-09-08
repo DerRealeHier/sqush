@@ -275,13 +275,13 @@ def set_featured_badge(user: User, badge_key: str) -> bool:
         db.session.commit()
         return True
 
-    # Validate that the user actually owns this badge
+    # make sure they actually earned it first (:
     has_badge = UserBadge.query.filter_by(user_id=user.id, badge_key=badge_key).first()
     if not has_badge:
         return False
 
     if user.featured_badge_key == badge_key:
-        # Toggle off
+        # toggle it off (:
         user.featured_badge_key = None
     else:
         user.featured_badge_key = badge_key

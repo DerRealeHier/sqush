@@ -28,12 +28,12 @@ def game_roadmap(game_id):
 
     all_items = query.all()
 
-    # Partition by status for the Trello columns
+    # split into 3 nice columns like trello (:
     planned_items = [item for item in all_items if item.status == "planned"]
     in_progress_items = [item for item in all_items if item.status == "in_progress"]
     done_items = [item for item in all_items if item.status == "done"]
 
-    # Statistics
+    # quick card counting
     total_items = RoadmapItem.query.filter_by(game_id=game.id).count()
     feature_count = RoadmapItem.query.filter_by(game_id=game.id, category="feature").count()
     bug_count = RoadmapItem.query.filter_by(game_id=game.id, category="bug").count()
@@ -97,15 +97,15 @@ def create_roadmap_item(game_id):
         status=status,
         category=category,
         is_dev_post=is_dev,
-        upvotes_count=1,  # Author automatically upvotes their own card
+        upvotes_count=1,  # author upvotes their own card obviously xD
     )
     db.session.add(item)
     db.session.flush()
 
-    # Automatically add the author's vote
+    # count that author vote right away (:
     db.session.add(RoadmapVote(item_id=item.id, user_id=current_user.id))
 
-    # Notify developer if a community member posts a suggestion or bug report
+    # poke the dev so they know someone found a bug or has an idea (:
     if not is_dev and game.developer_id != current_user.id:
         db.session.add(Notification(
             user_id=game.developer_id,
@@ -181,7 +181,7 @@ def update_roadmap_item_status(item_id):
     item.status = new_status
     db.session.commit()
 
-    # Notify author when developer updates the status of their submitted item
+    # let the player know the dev actually moved their card (:
     if old_status != new_status and item.author_id != current_user.id:
         db.session.add(Notification(
             user_id=item.author_id,
@@ -227,7 +227,7 @@ def edit_roadmap_item(item_id):
     item.title = title[:150]
     item.description = description or None
 
-    # Devs can also change status in the edit dialog
+    # devs can move status right here too xD
     if is_dev:
         new_status = request.form.get("status", item.status).strip().lower()
         if new_status in ("planned", "in_progress", "done"):
@@ -297,7 +297,7 @@ def comment_roadmap_item(item_id):
     )
     db.session.add(comment)
 
-    # Notify author or developer
+    # ping author or dev so they see the comment (:
     notify_id = None
     if current_user.id != game.developer_id:
         notify_id = game.developer_id

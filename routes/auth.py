@@ -202,7 +202,7 @@ def hackclub_callback():
         flash("Hack Club login failed: no email address was returned.", "error")
         return redirect(fail_redirect)
 
-    # ---- LINK MODE: attach this Hack Club identity to the CURRENTLY LOGGED IN account ----
+    # link mode: slap hack club onto the logged in user (:
     if link_user_id:
         target_user = db.session.get(User, link_user_id)
         if not target_user:
@@ -222,7 +222,7 @@ def hackclub_callback():
         flash("Hack Club account linked!", "success")
         return redirect(url_for("settings"))
 
-    # ---- NORMAL MODE: log in to the matching account, or register a brand new one ----
+    # normal mode: login or make a brand new account xD
     user = User.query.filter_by(email=email).first()
 
     if not user:
@@ -409,7 +409,7 @@ def google_login():
     if not email:
         return jsonify({"error": "Google account has no email"}), 400
 
-    # ---- LINK MODE: attach this Google identity to the CURRENTLY LOGGED IN account ----
+    # link mode: slap google onto the logged in user (:
     if link_mode:
         if not current_user.is_authenticated:
             return jsonify({"error": "You need to be logged in to link an account"}), 401
@@ -424,7 +424,7 @@ def google_login():
         db.session.commit()
         return jsonify({"status": "ok", "redirect": url_for("settings")})
 
-    # ---- NORMAL MODE: log in to the matching account, or register a brand new one ----
+    # normal mode: login or make a brand new account xD
     user = User.query.filter_by(firebase_uid=uid).first()
     if not user:
         user = User.query.filter_by(email=email).first()
@@ -641,7 +641,7 @@ def unlink_hackclub():
     return redirect(url_for("settings"))
 
 
-#You shouldn't even wanna do this. 🤬
+# You shouldn't even wanna do this ):
 @auth_bp.route("/logout")
 @login_required
 def logout():

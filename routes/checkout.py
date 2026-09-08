@@ -251,7 +251,7 @@ def gift_success(game_id):
             flash("Payment has not been completed yet.", "error")
             return redirect(url_for("gift_page", game_id=game.id))
 
-        # Idempotent: webhook may have already run this, that's fine
+        # webhook might have beaten us to it, all good xD
         fulfilled = fulfill_gift(checkout_session.id)
 
         #now the Stripe metadata shouldn't be touched
@@ -284,9 +284,7 @@ def gift_success(game_id):
     return render_template("gift_success.html", game=game, recipient_name=recipient_name)
 
 
-# -------------------------------------------------------------------------
-# Tip Jar routes
-# -------------------------------------------------------------------------
+# tip jar routes (make devs happy (: )
 
 @checkout_bp.route("/create-tip-checkout-session/<int:game_id>", methods=["POST"])
 def create_tip_checkout_session(game_id):
@@ -452,7 +450,7 @@ def create_bundle_checkout_session(bundle_id):
 
 @checkout_bp.route("/stripe/webhook", methods=["POST"])
 def stripe_webhook():
-    # stripe webhook endpoint
+    # stripe talking to us directly xD
     if not config.STRIPE_WEBHOOK_SECRET:
         print("DEBUG: STRIPE_WEBHOOK_SECRET is missing")
         return jsonify(error="Stripe webhook is not configured"), 500
@@ -530,7 +528,7 @@ def stripe_webhook():
                         process_pending_payouts_for_developer(user)
 
     except Exception as e:
-        # Return 500 so Stripe can retry the webhook when something failed. It shouldn't happen though.
+        # tell stripe something blew up so they retry later (:
         print(f"DEBUG: Stripe webhook processing error: {e}")
         return jsonify(error="Webhook processing failed"), 500
 
@@ -558,12 +556,12 @@ def success(game_id):
             flash("This payment session does not belong to your account.", "error")
             return redirect(url_for("game_detail", game_id=game.id))
 
-        # Only fulfill purchase on paid session.
+        # only hand out the game if they actually paid (:
         if checkout_session.payment_status != "paid":
             flash("Payment has not been completed yet.", "error")
             return redirect(url_for("game_detail", game_id=game.id))
 
-        # Fallback for local dev
+        # local dev fallback
         # we don't want double purchases
         existing_purchase = Purchase.query.filter_by(user_id=current_user.id, game_id=game.id).first()
         if existing_purchase and not existing_purchase.refunded:
@@ -620,7 +618,7 @@ def bundle_success(bundle_id):
 @checkout_bp.route("/refund/<int:game_id>", methods=["POST"])
 @login_required
 def refund_purchase(game_id):
-    # Request a full Stripe refund and revoke the game's library access.
+    # give money back and kick game out of library (:
     purchase = Purchase.query.filter_by(user_id=current_user.id, game_id=game_id, refunded=False).first()
     if not purchase or not purchase.stripe_payment_intent_id:
         flash("Purchase not found or cannot be refunded.", "error")
@@ -628,7 +626,7 @@ def refund_purchase(game_id):
 
     stripe.api_key = config.stripe_keys["secret_key"]
 
-    # Hole die echte Stripe Payment Intent ID (ohne das '|123' von den Bundles)
+    # grab clean payment intent id without the bundle piping xD
     real_pi = purchase.stripe_payment_intent_id.split('|')[0]
 
     try:

@@ -17,9 +17,7 @@ import config
 cart_bp = Blueprint("cart", __name__)
 
 
-# ---------------------------------------------------------------------------
-# Cart system
-# ---------------------------------------------------------------------------
+# shopping cart goodness (:
 
 
 @cart_bp.route("/cart/add/<int:game_id>", methods=["POST"])
@@ -80,7 +78,7 @@ def cart_view():
             p.game_id
             for p in Purchase.query.filter_by(user_id=current_user.id, refunded=False).all()
         }
-        # Silently drop stale items (games now owned via other means)
+        # kick out games they already bought so we don't charge them twice xD
         stale = CartItem.query.filter(
             CartItem.user_id == current_user.id,
             CartItem.game_id.in_(owned_ids)

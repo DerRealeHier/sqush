@@ -250,8 +250,8 @@
     </div>
 
     <div style="margin-top: 1.5rem; background: var(--yellow); color: var(--ink); border: 3px solid var(--line); box-shadow: 6px 6px 0 var(--line); padding: 1.25rem;">
-        <div style="font-family: 'Bangers', sans-serif; font-size: 1.1rem; letter-spacing: 1px; color: var(--pink); text-transform: uppercase; margin-bottom: 0.35rem;">DEMO PLATFORM &mdash; STRIPE TEST CARD</div>
-        <div style="font-size: 0.88rem; font-weight: 700; margin-bottom: 0.65rem; color: #111;">NO REAL PAYMENTS. TO COMPLETE THIS TEST CHECKOUT, USE:</div>
+        <div style="font-family: 'Bangers', sans-serif; font-size: 1.1rem; letter-spacing: 1px; color: var(--pink); text-transform: uppercase; margin-bottom: 0.35rem;">DEMO CHECKOUT &mdash; STRIPE TEST CARD</div>
+        <div style="font-size: 0.88rem; font-weight: 700; margin-bottom: 0.65rem; color: #111;">RELAX, ZERO REAL CHARGES! TO COMPLETE THIS TEST PURCHASE, USE:</div>
         <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
             <span style="background: #fff; color: #000; border: 2px solid var(--line); padding: 0.25rem 0.6rem; font-weight: 900;">4242 4242 4242 4242</span>
             <span style="background: #fff; color: #000; border: 2px solid var(--line); padding: 0.25rem 0.6rem; font-weight: 900;">EXP: 12/34</span>
@@ -266,7 +266,7 @@
         const bundleBtn = document.getElementById("submitBundleBtn");
         if (bundleBtn) {
             bundleBtn.addEventListener("click", () => {
-                // Button-Feedback, damit der User weiß, es lädt
+                // button feedback so they know it's loading (:
                 bundleBtn.innerText = "Loading...";
                 bundleBtn.disabled = true;
 
@@ -276,7 +276,7 @@
                         const stripe = Stripe(configData.publicKey);
                         const bundleId = bundleBtn.getAttribute("data-bundle-id");
 
-                        // Löst die Stripe Session in app.py aus
+                        // trigger stripe session for the bundle xD
                         fetch(`/create-bundle-checkout-session/${bundleId}`)
                             .then(response => {
                                 if (response.status === 401 || response.redirected) {
@@ -292,7 +292,7 @@
                                     bundleBtn.innerText = "Buy it!";
                                     bundleBtn.disabled = false;
                                 } else {
-                                    // Leitet zu Stripe weiter
+                                    // off to stripe checkout we go!
                                     return stripe.redirectToCheckout({ sessionId: sessionData.sessionId });
                                 }
                             })

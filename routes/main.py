@@ -17,6 +17,7 @@ import config
 main_bp = Blueprint("main", __name__)
 
 
+# quick mail health check so we know if resend or smtp is happy (:
 @main_bp.route("/api/mail-health")
 def mail_health():
     from flask import current_app
@@ -89,7 +90,7 @@ def store_front():
 
         games_by_genre[game.genre].append(game)
 
-    # Load all bundles with their games eagerly loaded
+    # grab bundles and their games all at once so the db doesn't cry xD
     bundles = Bundle.query.options(db.joinedload(Bundle.games).joinedload(BundleGame.game)).filter_by(is_published=True).all()
     return render_template("store.html", genres=games_by_genre, all_tags=sorted(all_tags), bundles=bundles)
 
@@ -105,7 +106,7 @@ def buy(game_id):
 @login_required
 def buy_bundle(bundle_id):
     bundle = Bundle.query.get_or_404(bundle_id)
-    # Nur erlauben, falls veröffentlicht ODER falls es ein angemeldeter Developer (Besitzer) ist
+    # only let them in if it's published or if it's their own dev bundle (:
     if not bundle.is_published and not (current_user.is_authenticated and current_user.role == "dev"):
         return "Bundle not available yet", 404
     return render_template("buy_bundle.html", bundle=bundle)

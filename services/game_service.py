@@ -6,9 +6,8 @@ from models.commerce import Purchase, Wishlist, Tip
 
 
 def calculate_game_revenue(game):
-    # SQL SUM is orders of magnitude faster than loading every Purchase object into Python.
-    # purchases where price_paid is NULL (legacy rows) are excluded from the sum;
-    # in practice price_paid is always set at purchase time.
+    # let sql do the heavy lifting instead of loading everything into python xD
+    # ignore weird old rows with null prices (:
     result = db.session.query(_sqlfunc.sum(Purchase.price_paid)).filter(
         Purchase.game_id == game.id,
         Purchase.refunded == False,
@@ -49,7 +48,7 @@ def _get_tag_set(game):
 
 
 def get_popular_games(exclude_ids=None, limit=6):
-    # Use SQL ORDER BY + LIMIT instead of loading all games into Python and sorting there.
+    # let the db sort it so our ram doesn't explode lol
     exclude_ids = exclude_ids or set()
     query = (
         db.session.query(Game)
@@ -70,7 +69,7 @@ def get_recommended_games(user, limit=6):
     if not user.is_authenticated:
         return []
 
-    # Check fast in-memory cache
+    # check cache first so we don't spam the db (:
     now_ts = datetime.now(timezone.utc).timestamp()
     cached = _rec_cache.get(user.id)
     if cached and (now_ts - cached["time"] < _REC_CACHE_TTL):
@@ -87,20 +86,20 @@ def get_recommended_games(user, limit=6):
     }
 
     if not my_owned_ids:
-        # Fresh account; recommend popular games
+        # new baby account, just show them the hits (:
         return get_popular_games(exclude_ids=set(), limit=limit)
 
     all_games = Game.query.all()
     games_by_id = {g.id: g for g in all_games}
 
-    # Personal tag cloud built from owned games
+    # see what kind of games they like (:
     my_tags = set()
     for gid in my_owned_ids:
         game = games_by_id.get(gid)
         if game:
             my_tags |= _get_tag_set(game)
 
-    # Fast tuple queries instead of hydrating full ORM models
+    # grab raw ids so it's super snappy
     all_purchases = db.session.query(Purchase.game_id, Purchase.user_id).filter_by(refunded=False).all()
     owners_by_game = {}
     games_by_user = {}
@@ -108,7 +107,7 @@ def get_recommended_games(user, limit=6):
         owners_by_game.setdefault(game_id, set()).add(user_id)
         games_by_user.setdefault(user_id, set()).add(game_id)
 
-    # Who owns at least one game with a same tag as mine?
+    # find people with the same taste (:
     tag_similar_user_ids = set()
     if my_tags:
         for uid, gids in games_by_user.items():
@@ -120,7 +119,7 @@ def get_recommended_games(user, limit=6):
                     tag_similar_user_ids.add(uid)
                     break
 
-    # Who shares at least one game with my library?
+    # who else plays the same stuff as me?
     similar_library_user_ids = {
         uid for uid, gids in games_by_user.items()
         if uid != user.id and (gids & my_owned_ids)
@@ -188,7 +187,7 @@ _last_sale_check: "datetime | None" = None
 def check_sales_expiry():
     global _last_sale_check
     now = datetime.now(timezone.utc)
-    # Only run the DB query at most once per minute - no need to check on every home page hit.
+    # check at most once a minute, no need to hammer the db on every reload xD
     if _last_sale_check is not None and (now - _last_sale_check).total_seconds() < 60:
         return
     _last_sale_check = now

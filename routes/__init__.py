@@ -21,7 +21,7 @@ def register_blueprints(app):
     app.register_blueprint(messages_bp)
     app.register_blueprint(roadmap_bp)
 
-    # Register legacy endpoint aliases for backward compatibility with templates and JS
+    # aliases so old links and js don't cry xD
     for rule in list(app.url_map.iter_rules()):
         if '.' in rule.endpoint:
             bare_name = rule.endpoint.split('.', 1)[1]

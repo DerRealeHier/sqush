@@ -27,10 +27,7 @@ def _extract_metadata(obj):
     return dict(getattr(meta, "_data", {}))
 
 
-# ---------------------------------------------------------------------------
-# Stripe Connect Helpers & Payout Engine
-# ---------------------------------------------------------------------------
-
+# stripe connect stuff so devs actually get paid xD
 def calculate_payout_split(amount, is_tip=False):
     """
     Calculates the automated split between developer earnings and Sqush platform fee.
@@ -76,7 +73,7 @@ def get_or_create_connect_account(user, country="DE"):
             db.session.commit()
             return account
         except stripe.error.InvalidRequestError:
-            # Stale / reset test account ID; recreate it
+            # dead test account, wipe it and start fresh (:
             user.stripe_connect_id = None
             user.stripe_connect_payouts_enabled = False
             user.stripe_connect_details_submitted = False
@@ -198,7 +195,7 @@ def process_pending_payouts_for_developer(user):
 
     transferred_count = 0
 
-    # 1. Process pending game purchases
+    # 1. send pending game money
     purchases = (
         Purchase.query.join(Game, Purchase.game_id == Game.id)
         .filter(
@@ -230,7 +227,7 @@ def process_pending_payouts_for_developer(user):
         else:
             p.payout_status = "direct"
 
-    # 2. Process pending tips
+    # 2. send pending tip money (:
     tips = Tip.query.filter(
         Tip.developer_id == user.id,
         Tip.payout_status.in_(["unconnected", "pending"]),
@@ -261,12 +258,9 @@ def process_pending_payouts_for_developer(user):
     return transferred_count
 
 
-# ---------------------------------------------------------------------------
-# Fulfillment Functions with Automated Revenue Splitting
-# ---------------------------------------------------------------------------
-
+# handing over the goods once stripe says yes (:
 def fulfill_checkout(checkout_session_id):
-    # Create the local Purchase only after Stripe confirms payment.
+    # no cash, no game! only create purchase once stripe says paid (:
     stripe.api_key = config.stripe_keys["secret_key"]
     checkout_session = stripe.checkout.Session.retrieve(checkout_session_id)
     if checkout_session.payment_status != "paid":
@@ -465,7 +459,7 @@ def fulfill_gift(checkout_session_id):
 
     gift_message = metadata.get("gift_message", "")
 
-    # Idempotency guard: Gift row already exists for this session?
+    # did we already gift this session? don't give it twice xD
     existing_gift = Gift.query.filter_by(
         stripe_checkout_session_id=checkout_session_id
     ).first()
@@ -476,7 +470,7 @@ def fulfill_gift(checkout_session_id):
     if not game:
         return False
 
-    # Book the purchase on the RECIPIENT (not the sender who paid)
+    # put the game in the recipient's hands (buyer already has theirs or just paid) (:
     price_paid = calculate_display_price(game)
     split = calculate_payout_split(price_paid)
     dev_user = game.user
@@ -515,7 +509,7 @@ def fulfill_gift(checkout_session_id):
         db.session.add(p)
         update_daily_stats(game)
 
-    # Create the Gift record so we always know who the sender was
+    # remember who was so generous (:
     gift = Gift(
         sender_id=sender_id,
         recipient_id=recipient_id,
@@ -526,7 +520,7 @@ def fulfill_gift(checkout_session_id):
     )
     db.session.add(gift)
 
-    # Notify the recipient
+    # ring the bell for the lucky recipient (:
     sender = db.session.get(User, sender_id)
     sender_name = sender.username if sender else "Someone"
     notif_msg = f"{sender_name} gifted you '{game.title}'!"
@@ -578,7 +572,7 @@ def fulfill_tip(checkout_session_id):
     if metadata.get("purchase_type") != "tip":
         return False
 
-    #  Tip row already exists?
+    # did we already count this tip? no double counting xD
     existing_tip = Tip.query.filter_by(
         stripe_checkout_session_id=checkout_session_id
     ).first()
@@ -639,7 +633,7 @@ def fulfill_tip(checkout_session_id):
     )
     db.session.add(tip)
 
-    # in app notification for developer
+    # tell the dev they just got tipped! (:
     notif_msg = f"{supporter_name} sent you a {amount:.2f}€ tip for '{game.title}'!"
     if tip_message:
         notif_msg += f' "{tip_message[:100]}"'

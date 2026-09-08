@@ -9,14 +9,14 @@ from models.message import DirectMessage
 messages_bp = Blueprint("messages", __name__)
 
 
-# helper to get all conversations for current user
+# grab all chats for this user (:
 def get_user_conversations(user_id):
-    # grab all messages involving this user
+    # get all dm rows involving us
     all_msgs = DirectMessage.query.filter(
         or_(DirectMessage.sender_id == user_id, DirectMessage.recipient_id == user_id)
     ).order_by(DirectMessage.created_at.desc()).all()
 
-    # group by the other person
+    # sort them by whoever we're gossiping with xD
     seen_users = {}
     conversations = []
     for msg in all_msgs:
@@ -40,7 +40,7 @@ def get_user_conversations(user_id):
     return conversations
 
 
-# main messages inbox
+# message hub (:
 @messages_bp.route("/messages")
 @login_required
 def inbox():
@@ -55,7 +55,7 @@ def inbox():
         if active_partner and active_partner.id != current_user.id:
             return redirect(url_for("messages.conversation", username=active_partner.username, game_id=game_id))
 
-    # default to the first conversation if available
+    # open first chat so user doesn't stare into the void (:
     if conversations:
         first_user = conversations[0]["user"]
         return redirect(url_for("messages.conversation", username=first_user.username))
@@ -69,7 +69,7 @@ def inbox():
     )
 
 
-# view thread with specific user or dev
+# chatting with someone specific (:
 @messages_bp.route("/messages/<username>")
 @login_required
 def conversation(username):
@@ -81,14 +81,14 @@ def conversation(username):
     game_id = request.args.get("game_id", type=int)
     active_game = db.session.get(Game, game_id) if game_id else None
 
-    # mark incoming unread messages as read
+    # marked as read, no more unread badges (:
     DirectMessage.query.filter_by(
         sender_id=target_user.id,
         recipient_id=current_user.id,
         is_read=False
     ).update({"is_read": True})
 
-    # also clear direct_message notifications from this user
+    # clear the bell notifications too
     notifs = Notification.query.filter_by(
         user_id=current_user.id,
         type="direct_message",
@@ -99,7 +99,7 @@ def conversation(username):
             n.is_read = True
     db.session.commit()
 
-    # fetch full chat history between both users
+    # load the whole drama history xD
     chat_messages = DirectMessage.query.filter(
         or_(
             and_(DirectMessage.sender_id == current_user.id, DirectMessage.recipient_id == target_user.id),
@@ -109,7 +109,7 @@ def conversation(username):
 
     conversations = get_user_conversations(current_user.id)
 
-    # ensure the current partner is in the list even if no messages exist yet
+    # put them in the sidebar even if we havent said hi yet (:
     if not any(c["user"].id == target_user.id for c in conversations):
         conversations.insert(0, {
             "user": target_user,
@@ -126,7 +126,7 @@ def conversation(username):
     )
 
 
-# sending a message
+# send message go zoom (:
 @messages_bp.route("/messages/send", methods=["POST"])
 @login_required
 def send_message():
@@ -143,7 +143,7 @@ def send_message():
         flash("Invalid recipient.", "error")
         return redirect(url_for("messages.inbox"))
 
-    # save message to db
+    # save text to db
     new_msg = DirectMessage(
         sender_id=current_user.id,
         recipient_id=recipient.id,
@@ -152,7 +152,7 @@ def send_message():
     )
     db.session.add(new_msg)
 
-    # create a notification so the recipient sees it immediately in their bell dropdown
+    # ring the bell for the other person (:
     notif = Notification(
         user_id=recipient.id,
         message=f"{current_user.username} sent you a message",
@@ -172,7 +172,7 @@ def send_message():
     return redirect(url_for("messages.conversation", username=recipient.username))
 
 
-# delete message
+# wipe message out of existence xD
 @messages_bp.route("/messages/delete/<int:message_id>", methods=["POST"])
 @login_required
 def delete_message(message_id):
@@ -186,7 +186,7 @@ def delete_message(message_id):
     return redirect(url_for("messages.conversation", username=other_user.username))
 
 
-# unread count API endpoint
+# how many unread dms we got (:
 @messages_bp.route("/messages/unread_count")
 @login_required
 def unread_count():

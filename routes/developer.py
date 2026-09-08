@@ -28,10 +28,7 @@ import config
 developer_bp = Blueprint("developer", __name__)
 
 
-# ---------------------------------------------------------------------------
-# Bundle dashboard routes
-# ---------------------------------------------------------------------------
-
+# bundle dashboard stuff (:
 @developer_bp.route("/dashboard/bundles")
 @login_required
 def developer_bundles():
@@ -522,7 +519,7 @@ def developer_revenue():
     if current_user.role != "dev":
         return "Access Denied. How could you?", 403
 
-    # Sync latest Stripe Connect account status if user has an account connected
+    # ask stripe if this dev is ready for payouts yet (:
     if current_user.stripe_connect_id and config.STRIPE_SECRET_KEY:
         try:
             sync_connect_account_status(current_user)
@@ -565,7 +562,7 @@ def developer_revenue():
             "tips_count": tips_count,
         })
 
-    # Query recent transactions for this developer's games
+    # see what people bought recently xD
     recent_purchases = (
         Purchase.query.filter(Purchase.game_id.in_(my_game_ids), Purchase.refunded == False)
         .order_by(Purchase.purchased_at.desc())
@@ -591,7 +588,7 @@ def developer_revenue():
             "stripe_transfer_id": p.stripe_transfer_id,
         })
 
-    # Recent tips for this developer
+    # fresh tips for the dev (:
     recent_tips = (
         Tip.query.filter_by(developer_id=current_user.id)
         .order_by(Tip.created_at.desc())
@@ -615,7 +612,7 @@ def developer_revenue():
             "stripe_transfer_id": t.stripe_transfer_id,
         })
 
-    # Sort combined transactions by date descending
+    # newest money first (:
     transactions.sort(key=lambda x: x["date"] or datetime.min, reverse=True)
 
     revenue_data.sort(key=lambda x: x["total_earned"], reverse=True)
@@ -635,10 +632,7 @@ def developer_revenue():
     )
 
 
-# ---------------------------------------------------------------------------
-# Stripe Connect Developer Onboarding & Dashboard Routes
-# ---------------------------------------------------------------------------
-
+# getting devs set up with stripe connect so they get paid xD
 @developer_bp.route("/dashboard/stripe-connect/connect")
 @login_required
 def stripe_connect_onboard():

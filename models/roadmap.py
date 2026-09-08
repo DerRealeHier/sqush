@@ -24,7 +24,7 @@ class RoadmapItem(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
-    # Relationships
+    # all the connections (:
     game = db.relationship(
         "Game",
         backref=db.backref("roadmap_items", lazy=True, cascade="all, delete-orphan", order_by="RoadmapItem.created_at.desc()")

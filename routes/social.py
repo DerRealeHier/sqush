@@ -154,7 +154,7 @@ def vote_review(review_id, vote_type):
     return jsonify({"helpful": review.helpful_count, "funny": review.funny_count})
 
 
-#Same toggle idea as vote_review but for GameUpdate posts and up/down.
+# same toggle idea as vote_review but for game updates up/down xD
 @social_bp.route("/update/<int:update_id>/vote/<vote_type>", methods=["POST"])
 @login_required
 def vote_update(update_id, vote_type):
@@ -170,14 +170,14 @@ def vote_update(update_id, vote_type):
     existing = UpdateVote.query.filter_by(update_id=update_id, user_id=current_user.id).first()
     if existing:
         if existing.vote_type == vote_type:
-            # clicked the same button again removes the vote
+            # clicked the same button again removes the vote lol
             db.session.delete(existing)
             if vote_type == "up":
                 update.upvotes -= 1
             else:
                 update.downvotes -= 1
         else:
-            # switched from up to down or other way around
+            # flipped their vote up to down or down to up (:
             if existing.vote_type == "up":
                 update.upvotes -= 1
                 update.downvotes += 1
@@ -324,7 +324,7 @@ def profile(username):
         .filter_by(profile_user_id=target_user.id) \
         .order_by(ProfileComment.created_at.desc()).all()
 
-    # Sync and load user badges
+    # sync and grab all their shiny badges (:
     sync_user_badges(target_user)
     badges = get_user_badges(target_user)
     featured_badge = get_featured_badge(target_user)

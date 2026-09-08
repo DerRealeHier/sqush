@@ -2,9 +2,7 @@ from datetime import datetime, timezone
 from extensions import db
 
 
-# ---------------------------------------------------------------------------
-# Bundle models
-# ---------------------------------------------------------------------------
+# bundles of joy and cheap games (:
 
 class Bundle(db.Model):
     id = db.Column(db.Integer, primary_key=True)

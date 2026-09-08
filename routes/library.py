@@ -44,17 +44,17 @@ def library():
             "days_remaining": days_remaining
         })
 
-    # Build collections context
+    # prepare custom folders for the library (:
     collections = Collection.query.options(db.joinedload(Collection.games)).filter_by(user_id=current_user.id).order_by(Collection.created_at).all()
 
-    # Set of game IDs that belong to at least one collection (for "ungrouped" detection)
+    # games that already have a home
     assigned_game_ids = {
         cg.game_id
         for col in collections
         for cg in col.games
     }
 
-    # Per-collection set of game IDs for the dropdown checkmarks in the template
+    # checkmarks for each dropdown (:
     col_game_ids_map = {
         col.id: {cg.game_id for cg in col.games}
         for col in collections
@@ -69,10 +69,7 @@ def library():
     )
 
 
-# ---------------------------------------------------------------------------
-# Library Collection routes
-# ---------------------------------------------------------------------------
-
+# custom collection folders (:
 @library_bp.route("/collections/create", methods=["POST"])
 @login_required
 def create_collection():
@@ -82,7 +79,7 @@ def create_collection():
     if not name:
         flash("Collection name cannot be empty.", "error")
         return redirect(url_for("library"))
-    # Validate hex color input
+    # make sure it's a real hex color (:
     if not (len(color) == 7 and color.startswith("#")):
         color = "#ffeb3b"
     existing = Collection.query.filter_by(user_id=current_user.id, name=name).first()
@@ -152,8 +149,7 @@ def toggle_game_collection(collection_id, game_id):
 @library_bp.route("/purchase/<int:game_id>", methods=["POST"])
 @login_required
 def purchase(game_id):
-    # Manual/local purchase route kept for development/testing.
-    # Real card payments should go through Stripe Checkout + webhook.
+    # cheat button for local dev testing without real money lol
     existing_purchase = Purchase.query.filter_by(
         user_id=current_user.id,
         game_id=game_id
@@ -164,8 +160,7 @@ def purchase(game_id):
 
     game = Game.query.get_or_404(game_id)
 
-    # Both a first-time buy and a re-buy after refund create the same Purchase row.
-    # Re-using a refunded row would destroy its refund history, so we always create a new one.
+    # fresh purchase row so we don't mess up refund history if they buy it again xD
     new_purchase = Purchase(
         user_id=current_user.id,
         game_id=game_id,
@@ -238,7 +233,7 @@ def download_game(game_id):
         flash("No download file available for this game.", "error")
         return redirect(url_for("library.library"))
 
-    # If Cloudflare R2 is enabled
+    # grab from r2 storage if enabled
     if config.R2_ENABLED:
         r2_key = game.download_path
         if config.R2_PUBLIC_URL and r2_key.startswith(config.R2_PUBLIC_URL):
@@ -251,7 +246,7 @@ def download_game(game_id):
         if presigned_url:
             return redirect(presigned_url)
 
-    # Local fallback
+    # fallback to local files
     rel_path = game.download_path.lstrip("/\\")
     full_path = os.path.join(current_app.root_path, "static", rel_path)
     if os.path.exists(full_path):

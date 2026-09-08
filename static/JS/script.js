@@ -1,7 +1,7 @@
-// sqush frontend interactions (optimized for smooth 60fps rendering)
+// sqush frontend magic, smooth like butter xD
 
 // =========================================================================
-// Dynamic Day / Night Pixel Art Banner (Version 2 = Day, Version 1 = Night)
+// day & night banner magic (v2 day, v1 night) (:
 // =========================================================================
 (function initDayNightBanner() {
     function isDaytime() {
@@ -42,7 +42,7 @@
         }
     }
 
-    // Apply immediately to avoid any visual flash
+    // slap theme on instantly so screen doesnt flash flashbang style (:
     applyTheme();
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -69,7 +69,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Review vote buttons (event delegation instead of one listener per button)
+    // review vote clicks (one listener to rule them all xD)
     document.addEventListener('click', (e) => {
         const btn = e.target.closest('.vote-btn');
         if (!btn) return;
@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => console.error("Vote Mistake:", err));
     });
 
-    // Wishlist Herz-Buttons (Store-Cards, Home-Cards, Detail-Seite, Wishlist-Seite)
+    // wishlist heart buttons all over the place (:
     document.addEventListener('click', (e) => {
         const btn = e.target.closest('.wishlist-btn');
         if (!btn) return;
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 if (!data) return;
 
-                // Sync all wishlist buttons with the same game ID on the page
+                // update all little hearts on the page at once (:
                 document.querySelectorAll(`.wishlist-btn[data-game-id="${gameId}"]`).forEach(b => {
                     const icon = b.querySelector('i');
                     if (data.on_wishlist) {
@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => console.error("Wishlist Fehler:", err));
     });
 
-    // Cart system toggle
+    // cart toggle button go brrr xD
     document.addEventListener("click", (e) => {
         const btn = e.target.closest(".cart-btn");
         if (!btn) return;
@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const inCart = btn.classList.contains("active");
         const url = inCart ? `/cart/remove/${gameId}` : `/cart/add/${gameId}`;
         
-        // Pass the HMAC nonce if available
+        // pass the cart token so nobody plays tricks (:
         const headers = { "Content-Type": "application/json" };
         if (window.squshCartToken) {
             headers["X-Cart-Token"] = window.squshCartToken;
@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 if (!data) return;
                 
-                // Sync all cart buttons with the same game ID on the page
+                // keep all cart buttons in sync across the page (:
                 document.querySelectorAll(`.cart-btn[data-game-id="${gameId}"]`).forEach(b => {
                     const icon = b.querySelector("i");
                     const label = b.querySelector(".cart-btn-label");
@@ -200,14 +200,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
 
-                // If we are on the cart page, remove the item's row
+                // kick the row out if we are on the cart page (:
                 if (!data.in_cart && window.location.pathname === "/cart") {
                     const row = document.getElementById(`cart-item-${gameId}`);
                     if (row) row.remove();
                     window.location.reload();
                 }
                 
-                // Update all badge counts!
+                // update little red badge counter xD
                 document.querySelectorAll(".cart-count-badge").forEach(badge => {
                     badge.textContent = data.cart_count;
                     if (data.cart_count === 0) badge.classList.add("d-none");
@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => console.error("Cart Fehler:", err));
     });
 
-    // Cart checkout handler
+    // time to pay for the whole cart (:
     const cartCheckoutBtn = document.querySelector("#cartCheckoutBtn");
     if (cartCheckoutBtn) {
         fetch("/config")
@@ -248,8 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch((err) => { console.error("Stripe config Fehler:", err); });
     }
 
-    // Stripe checkout
-    // Only hit /config (and init Stripe) on pages that actually have a buy button.
+    // stripe checkout, only load keys if there's an actual buy button (:
     const submitBtn = document.querySelector("#submitBtn");
     if (submitBtn) {
         fetch("/config")
@@ -339,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
                 const gameId = submitTipBtn.dataset.gameId;
 
-                // Validate amount
+                // gotta be at least a buck xD
                 if (!currentTipAmount || currentTipAmount < 1.00) {
                     if (tipErrorAlert) {
                         tipErrorAlert.textContent = "Please choose an amount of at least 1.00 €.";
@@ -418,7 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Centralized single interval for countdown timers (replaces N intervals with 1)
+    // one timer interval to rule them all instead of lagging the browser xD
     const timerElements = document.querySelectorAll(".timer");
     if (timerElements.length > 0) {
         const timerData = [];
@@ -457,7 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const centralTimerInterval = setInterval(updateAllTimers, 1000);
     }
 
-    // Debounced, in-memory home game search
+    // fast home search in memory so it doesn't lag (:
     const gameSearch = document.getElementById('gameSearch');
     if (gameSearch) {
         const homeItems = Array.from(document.querySelectorAll('#gamesGrid .game-item')).map(item => ({
@@ -496,7 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // High-performance store filtering with in-memory caching and RAF
+    // ultra fast store filtering so everything stays 60fps (:
     const storeSearch = document.getElementById('storeSearch');
     const genreCheckboxes = document.querySelectorAll('.genre-checkbox');
     const tagCheckboxes = document.querySelectorAll('.tag-checkbox');
@@ -521,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tagPillMatchesCount = document.getElementById('tagPillMatchesCount');
 
     if (storeSearch && priceMinFilter && priceMaxFilter && saleFilter && rawGameItems.length > 0) {
-        // Cache game item attributes in memory once to avoid DOM reads & JSON.parse on each keystroke
+        // cache game info so typing doesn't melt the cpu xD
         const cachedStoreGames = Array.from(rawGameItems).map(item => {
             let tags = [];
             try {
@@ -734,7 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
         applyStoreFilters();
     }
 
-    // High-performance Lazy Video Preview on card hover
+    // hover preview for videos so cards feel alive (:
     document.querySelectorAll('.game-card, .home-sale-card').forEach(card => {
         const slot = card.querySelector('.game-video-slot');
         const localVideo = card.querySelector('video.game-video');
@@ -769,7 +768,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     localVideo.style.opacity = '1';
                     localVideo.play().catch(() => {});
                 }
-            }, 180); // 180ms hover debounce prevents unneeded video loading on quick cursor passing
+            }, 180); // 180ms hover debounce so quick flicking doesn't hammer videos xD
         });
 
         card.addEventListener('mouseleave', () => {
@@ -795,9 +794,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Feature: Views, Votes, Follow
+    // views, votes, follow (:
 
-    // View count per Update
+    // view count per update (:
     const updateViewBadges = document.querySelectorAll(".update-view-count");
     if (updateViewBadges.length > 0) {
         setTimeout(() => {
@@ -849,7 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
 
-                // active only one button at a time
+                // only one button active at a time (:
                 document.querySelectorAll(`.update-vote-btn[data-update-id="${updateId}"]`).forEach(b => {
                     if (b !== btn) b.classList.remove("active");
                 });
@@ -858,7 +857,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => console.error("Update vote error:", err));
     });
 
-    // Follow Game Buttons
+    // follow game buttons (:
     document.addEventListener('click', (e) => {
         const btn = e.target.closest('.follow-game-btn');
         if (!btn) return;
@@ -878,7 +877,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(data => {
                 if (!data) return;
-                // there can be several follow buttons on the page
+                // sync all follow buttons on the page (:
                 document.querySelectorAll(`.follow-game-btn[data-game-id="${gameId}"]`).forEach(b => {
                     const bIcon = b.querySelector("i");
                     if (data.following) {

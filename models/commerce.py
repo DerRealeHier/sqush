@@ -9,14 +9,14 @@ class Purchase(db.Model):
     price_paid = db.Column(db.Float, nullable=True)  # what it actually cost at purchase time
     purchased_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
-    # Stripe references. These are required.
+    # stripe IDs so we know where the dough came from xD
     stripe_checkout_session_id = db.Column(db.String(255), nullable=True, unique=True)
     stripe_payment_intent_id = db.Column(db.String(255), nullable=True, unique=True)
 
-    # Refund state. Keep the purchase row so payment history is not destroyed.
+    # refund state so we don't nuke their whole purchase history lol
     refunded = db.Column(db.Boolean, default=False, nullable=False)
     refunded_at = db.Column(db.DateTime, nullable=True)
-    # Stripe Connect payout tracking
+    # stripe connect payout stuff for the dev cut (:
     dev_payout_amount = db.Column(db.Float, nullable=True)     # e.g. 90% of price_paid
     platform_fee_amount = db.Column(db.Float, nullable=True)   # e.g. 10% of price_paid
     stripe_transfer_id = db.Column(db.String(255), nullable=True) # Stripe Transfer ID (tr_xxx)
@@ -77,7 +77,7 @@ class Tip(db.Model):
     supporter_name = db.Column(db.String(64), nullable=True)
     stripe_checkout_session_id = db.Column(db.String(255), nullable=True, unique=True)
     stripe_payment_intent_id = db.Column(db.String(255), nullable=True)
-    # Stripe Connect payout tracking for tips
+    # tip payout tracking so dev gets the cash (:
     dev_payout_amount = db.Column(db.Float, nullable=True)
     platform_fee_amount = db.Column(db.Float, nullable=True)
     stripe_transfer_id = db.Column(db.String(255), nullable=True)

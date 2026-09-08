@@ -20,7 +20,7 @@ AVATAR_FOLDER = os.environ.get("AVATAR_FOLDER", "static/avatars")
 os.makedirs(AVATAR_FOLDER, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Cloudflare R2 Storage (S3-compatible object storage)
+# r2 storage for huge games so i don't go broke (:
 R2_ACCOUNT_ID = os.environ.get("R2_ACCOUNT_ID")
 R2_ACCESS_KEY_ID = os.environ.get("R2_ACCESS_KEY_ID")
 R2_SECRET_ACCESS_KEY = os.environ.get("R2_SECRET_ACCESS_KEY")
@@ -28,12 +28,12 @@ R2_BUCKET_NAME = os.environ.get("R2_BUCKET_NAME")
 R2_PUBLIC_URL = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
 R2_ENABLED = bool(R2_ACCOUNT_ID and R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY and R2_BUCKET_NAME)
 
-# Cloudflare Turnstile (bot protection)
+# slap bots in the face xD
 TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY")
 TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY")
 TURNSTILE_ENABLED = bool(TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY)
 
-# Hack Club OAuth
+# hack club login stuff
 HACKCLUB_CLIENT_ID = os.environ.get("HACKCLUB_CLIENT_ID")
 HACKCLUB_CLIENT_SECRET = os.environ.get("HACKCLUB_CLIENT_SECRET")
 HACKCLUB_REDIRECT_URI = os.environ.get(
@@ -41,7 +41,7 @@ HACKCLUB_REDIRECT_URI = os.environ.get(
     "http://localhost:5000/auth/hackclub/callback",
 )
 HACKCLUB_AUTH_BASE = "https://auth.hackclub.com"
-# used everywhere we need to know if the button/route should even be active
+# so we know if the button should even show up (:
 HACKCLUB_ENABLED = bool(HACKCLUB_CLIENT_ID and HACKCLUB_CLIENT_SECRET)
 
 stripe_keys = {
@@ -54,10 +54,10 @@ STRIPE_SECRET_KEY = stripe_keys["secret_key"]
 STRIPE_PUBLISHABLE_KEY = stripe_keys["publishable_key"]
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
 
-# Stripe Connect automated payout split percentages
-PLATFORM_FEE_PERCENT = float(os.environ.get("PLATFORM_FEE_PERCENT", "10.0"))  # 10% Sqush platform fee
-DEV_PAYOUT_PERCENT = float(os.environ.get("DEV_PAYOUT_PERCENT", "90.0"))     # 90% Developer cut
-TIP_PLATFORM_FEE_PERCENT = float(os.environ.get("TIP_PLATFORM_FEE_PERCENT", "0.0")) # 0% on tips (100% to dev)
+# revenue split so devs get their cash (:
+PLATFORM_FEE_PERCENT = float(os.environ.get("PLATFORM_FEE_PERCENT", "10.0"))  # 10% sqush keeps
+DEV_PAYOUT_PERCENT = float(os.environ.get("DEV_PAYOUT_PERCENT", "90.0"))     # 90% dev cut
+TIP_PLATFORM_FEE_PERCENT = float(os.environ.get("TIP_PLATFORM_FEE_PERCENT", "0.0")) # 0% on tips (100% goes to the dev (: )
 
 MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
 MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
@@ -78,10 +78,9 @@ FIREBASE_WEB_CONFIG = {
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 
-# Only these extensions are allowed for the actual game/demo download, everything
-# else gets rejected before it ever touches the scanner (belt and suspenders).
+# only zips and exes for game downloads, everything else gets kicked out instantly xD
 ALLOWED_GAME_EXTENSIONS = {"zip", "exe"}
-# security scan for game uploads
+# scanning games so nobody uploads malware lol
 CLAMAV_ENABLED = os.environ.get("CLAMAV_ENABLED", "false").lower() == "true"
 CLAMAV_HOST = os.environ.get("CLAMAV_HOST", "localhost")
 CLAMAV_PORT = int(os.environ.get("CLAMAV_PORT", 3310))

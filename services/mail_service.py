@@ -19,8 +19,7 @@ def send_email(to, subject, html_body):
     else:
         sender_full = sender
 
-    # Method 1: If using Resend (API key starts with 're_'), use the Resend HTTPS API directly.
-    # This avoids SMTP port 587 TLS timeouts or firewall blocks on cloud containers.
+    # resend API goes zoom (bypasses annoying smtp port blocks and timeouts) (:
     if mail_pwd and mail_pwd.startswith("re_"):
         try:
             import json
@@ -51,7 +50,7 @@ def send_email(to, subject, html_body):
         except urllib.error.HTTPError as e:
             err_body = e.read().decode("utf-8", errors="ignore")
             print(f"ERROR: Resend API HTTP error {e.code}: {err_body}", flush=True)
-            # Smart fallback: If domain in Resend was configured as send.sqush.dev
+            # fallback if resend only likes send.sqush.dev (:
             if ("domain" in err_body.lower() or "not verified" in err_body.lower()) and "send.sqush.dev" not in sender_full:
                 try:
                     alt_sender = "Sqush <noreply@send.sqush.dev>"
@@ -80,7 +79,7 @@ def send_email(to, subject, html_body):
         except Exception as e:
             print(f"DEBUG: Resend API attempt error: {e}", flush=True)
 
-    # Method 2: Standard Flask-Mail SMTP
+    # old school smtp fallback just in case xD
     if not mail_user:
         print(f"DEBUG: MAIL_USERNAME not set, skipping mail to {to}: {subject}")
         return False
@@ -127,7 +126,7 @@ def send_verification_email(user):
 
 
 def send_email_change_verification(user, new_email):
-    # separate salt so this token can never be replayed against verify_email
+    # different salt so hackers can't trick our verify email xD
     token = email_serializer.dumps({"user_id": user.id, "new_email": new_email}, salt="email-change")
     verify_url = url_for("verify_email_change", token=token, _external=True)
     body = f"""

@@ -88,23 +88,23 @@ def create_app(config_override=None):
     app.config["MAIL_DEFAULT_SENDER"] = config.MAIL_DEFAULT_SENDER
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 86400
 
-    # Production Session & Cookie Hardening
+    # no cookie stealing here lol
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SECURE"] = not app.debug
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["REMEMBER_COOKIE_HTTPONLY"] = True
     app.config["REMEMBER_COOKIE_SECURE"] = not app.debug
     app.config["REMEMBER_COOKIE_SAMESITE"] = "Lax"
-    app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024  # 100 MB max request body
+    app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024  # 100 MB max upload so people can upload actual games lol
 
-    # Reverse proxy support (Gunicorn + Render + Cloudflare)
+    # tell flask we're behind cloudflare & render
     from werkzeug.middleware.proxy_fix import ProxyFix
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     if config_override:
         app.config.update(config_override)
 
-    # Initialize extensions
+    # spin up all the shiny extensions
     db.init_app(app)
     #Initiliaze Login
     login_manager.init_app(app)
@@ -114,17 +114,17 @@ def create_app(config_override=None):
     #Yea I need that
     migrate.init_app(app, db)
 
-    # Security & caching headers
+    # browser headers so nobody embeds us in shady iframes or messes with mime types (:
     @app.after_request
     def add_security_and_caching_headers(response):
-        # Security headers
+        # lock the doors
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
 
         if request.path.startswith("/static/uploads/"):
-            # Never cache uploads aggressively so replaced covers/avatars update immediately
+            # don't cache uploads like crazy or new pfps won't show up (:
             response.headers["Cache-Control"] = "no-cache, must-revalidate, max-age=0"
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
@@ -144,7 +144,7 @@ def create_app(config_override=None):
         except Exception:
             return url_for("static", filename=rel_path)
 
-    # Context processors
+    # stuff we throw into every template
     @app.context_processor
     def inject_global_data():
         data = {
@@ -230,7 +230,7 @@ def create_app(config_override=None):
             data["current_user_featured_badge"] = None
             data["wishlist_ids"] = set()
             data["following_game_ids"] = set()
-            # Guest cart lives in the Flask session as a list of game IDs
+            # guest cart just sits in flask session until they login xD
             guest_cart = session.get("guest_cart", [])
             data["cart_ids"] = set(guest_cart)
             data["cart_count"] = len(guest_cart)
@@ -239,7 +239,7 @@ def create_app(config_override=None):
 
     @app.errorhandler(429)
     def ratelimit_handler(e):
-        # e.description holds flask limiters "X per Y" text
+        # limiter tells them how long to chill (:
         flash(f"Too many attempts, slow down (: Try again in a bit. ({e.description})", "error")
         return redirect(request.referrer or url_for("home")), 429
 

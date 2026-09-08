@@ -2,15 +2,15 @@ from datetime import datetime, timezone
 from extensions import db
 
 
-# Library Collection models
+# custom library folders so games stay organized (:
 class Collection(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
     name = db.Column(db.String(80), nullable=False)
     description = db.Column(db.String(250), nullable=True)
-    color = db.Column(db.String(7), default="#ffeb3b")  # Hex accent colour shown as left border
-    is_hidden = db.Column(db.Boolean, default=False)    # user can hide a collection (including ungrouped trick)
+    color = db.Column(db.String(7), default="#ffeb3b")  # hex accent color for that snazzy border xD
+    is_hidden = db.Column(db.Boolean, default=False)    # hide collections you don't wanna see right now (:
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = db.relationship("User", backref="collections")

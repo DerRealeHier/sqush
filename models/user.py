@@ -32,7 +32,7 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     featured_badge_key = db.Column(db.String(50), nullable=True)  # badge key user chooses to showcase
 
-    # Stripe Connect (Express) fields for automated developer payouts
+    # stripe connect stuff so devs get direct cash (:
     stripe_connect_id = db.Column(db.String(255), nullable=True, unique=True)
     stripe_connect_payouts_enabled = db.Column(db.Boolean, default=False)
     stripe_connect_details_submitted = db.Column(db.Boolean, default=False)
