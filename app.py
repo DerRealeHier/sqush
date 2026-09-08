@@ -88,6 +88,19 @@ def create_app(config_override=None):
     app.config["MAIL_DEFAULT_SENDER"] = config.MAIL_DEFAULT_SENDER
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 86400
 
+    # Production Session & Cookie Hardening
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SECURE"] = not app.debug
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["REMEMBER_COOKIE_HTTPONLY"] = True
+    app.config["REMEMBER_COOKIE_SECURE"] = not app.debug
+    app.config["REMEMBER_COOKIE_SAMESITE"] = "Lax"
+    app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024  # 100 MB max request body
+
+    # Reverse proxy support (Gunicorn + Render + Cloudflare)
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
     if config_override:
         app.config.update(config_override)
 
@@ -101,9 +114,15 @@ def create_app(config_override=None):
     #Yea I need that
     migrate.init_app(app, db)
 
-    # Static asset caching headers
+    # Security & caching headers
     @app.after_request
-    def add_caching_headers(response):
+    def add_security_and_caching_headers(response):
+        # Security headers
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+
         if request.path.startswith("/static/uploads/"):
             # Never cache uploads aggressively so replaced covers/avatars update immediately
             response.headers["Cache-Control"] = "no-cache, must-revalidate, max-age=0"
