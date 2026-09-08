@@ -4,6 +4,7 @@ __pycache__
 *.pyc
 .idea
 .qodo
+instance/
 *.sqlite3
-instance/*.sqlite3
+*.db
 .env

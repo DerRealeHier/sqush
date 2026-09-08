@@ -57,6 +57,7 @@ ehthumbs.db
 # User Uploads & Media (preserve folder structure and default avatar)
 static/uploads/*
 !static/uploads/.gitkeep
+!static/uploads/covers/
 static/avatars/*
 !static/avatars/default.png
 !static/avatars/.gitkeep
