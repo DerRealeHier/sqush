@@ -9,16 +9,89 @@ import config
 
 
 def send_email(to, subject, html_body):
-    #Wrapped so we only have ONE place that can blow up
     mail_user = current_app.config.get("MAIL_USERNAME") or config.MAIL_USERNAME
+    mail_pwd = current_app.config.get("MAIL_PASSWORD") or config.MAIL_PASSWORD
+    sender = current_app.config.get("MAIL_DEFAULT_SENDER") or config.MAIL_DEFAULT_SENDER or "noreply@sqush.dev"
+    if not sender or sender == "resend" or "@" not in sender:
+        sender = "noreply@sqush.dev"
+    if "<" not in sender:
+        sender_full = f"Sqush <{sender}>"
+    else:
+        sender_full = sender
+
+    # Method 1: If using Resend (API key starts with 're_'), use the Resend HTTPS API directly.
+    # This avoids SMTP port 587 TLS timeouts or firewall blocks on cloud containers.
+    if mail_pwd and mail_pwd.startswith("re_"):
+        try:
+            import json
+            import urllib.request
+            import urllib.error
+
+            payload = json.dumps({
+                "from": sender_full,
+                "to": [to],
+                "subject": subject,
+                "html": html_body
+            }).encode("utf-8")
+
+            req = urllib.request.Request(
+                "https://api.resend.com/emails",
+                data=payload,
+                headers={
+                    "Authorization": f"Bearer {mail_pwd}",
+                    "Content-Type": "application/json",
+                    "User-Agent": "Sqush/1.0"
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                resp_data = json.loads(resp.read().decode("utf-8"))
+                print(f"INFO: Email sent via Resend API to {to} (ID: {resp_data.get('id')})", flush=True)
+                return True
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode("utf-8", errors="ignore")
+            print(f"ERROR: Resend API HTTP error {e.code}: {err_body}", flush=True)
+            # Smart fallback: If domain in Resend was configured as send.sqush.dev
+            if ("domain" in err_body.lower() or "not verified" in err_body.lower()) and "send.sqush.dev" not in sender_full:
+                try:
+                    alt_sender = "Sqush <noreply@send.sqush.dev>"
+                    alt_payload = json.dumps({
+                        "from": alt_sender,
+                        "to": [to],
+                        "subject": subject,
+                        "html": html_body
+                    }).encode("utf-8")
+                    alt_req = urllib.request.Request(
+                        "https://api.resend.com/emails",
+                        data=alt_payload,
+                        headers={
+                            "Authorization": f"Bearer {mail_pwd}",
+                            "Content-Type": "application/json",
+                            "User-Agent": "Sqush/1.0"
+                        },
+                        method="POST"
+                    )
+                    with urllib.request.urlopen(alt_req, timeout=10) as alt_resp:
+                        alt_resp_data = json.loads(alt_resp.read().decode("utf-8"))
+                        print(f"INFO: Email sent via Resend API (subdomain) to {to} (ID: {alt_resp_data.get('id')})", flush=True)
+                        return True
+                except Exception as alt_e:
+                    print(f"ERROR: Resend API subdomain fallback also failed: {alt_e}", flush=True)
+        except Exception as e:
+            print(f"DEBUG: Resend API attempt error: {e}", flush=True)
+
+    # Method 2: Standard Flask-Mail SMTP
     if not mail_user:
         print(f"DEBUG: MAIL_USERNAME not set, skipping mail to {to}: {subject}")
-        return
+        return False
     try:
-        msg = Message(subject=subject, recipients=[to], html=html_body)
+        msg = Message(subject=subject, recipients=[to], html=html_body, sender=sender_full)
         mail.send(msg)
+        print(f"INFO: Email sent via SMTP to {to}", flush=True)
+        return True
     except Exception as e:
-        print(f"DEBUG: Mail error: {e}")
+        print(f"ERROR: Flask-Mail SMTP error to {to}: {e}", flush=True)
+        return False
 
 
 def _comic_email_shell(headline, body_html):
