@@ -238,7 +238,10 @@ app = create_app()
 #initilaize the Database
 with app.app_context():
     print("DEBUG: Prüfe Database Tables und Spalten")
-    db.create_all()
+    try:
+        db.create_all()
+    except Exception as e:
+        print(f"DEBUG: db.create_all notice: {e}")
     try:
         from sqlalchemy import text, inspect
         inspector = inspect(db.engine)

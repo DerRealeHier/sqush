@@ -24,4 +24,4 @@ RUN mkdir -p instance static/uploads static/avatars
 EXPOSE 8080
 
 # Start Flask with Gunicorn WSGI production server
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "3", "--threads", "2", "--timeout", "120", "app:create_app()"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--threads", "4", "--timeout", "120", "--preload", "app:app"]
