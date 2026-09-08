@@ -1,4 +1,72 @@
 // sqush.io frontend interactions (optimized for smooth 60fps rendering)
+
+// =========================================================================
+// Dynamic Day / Night Pixel Art Banner (Version 2 = Day, Version 1 = Night)
+// =========================================================================
+(function initDayNightBanner() {
+    function isDaytime() {
+        const stored = localStorage.getItem('sqush_theme_mode');
+        if (stored === 'day') return true;
+        if (stored === 'night') return false;
+        const hour = new Date().getHours();
+        return hour >= 6 && hour < 20; // 06:00 to 19:59 is Day (Version 2)
+    }
+
+    function applyTheme() {
+        const day = isDaytime();
+        const root = document.documentElement;
+        const body = document.body;
+
+        if (day) {
+            root.classList.remove('theme-night');
+            root.classList.add('theme-day');
+            if (body) {
+                body.classList.remove('theme-night');
+                body.classList.add('theme-day');
+            }
+        } else {
+            root.classList.remove('theme-day');
+            root.classList.add('theme-night');
+            if (body) {
+                body.classList.remove('theme-day');
+                body.classList.add('theme-night');
+            }
+        }
+
+        const toggleBtn = document.getElementById('dayNightToggle');
+        if (toggleBtn) {
+            toggleBtn.innerHTML = day
+                ? '<i class="bi bi-sun-fill text-warning" title="Tag-Modus aktiv (Klicken für Nacht-Modus)"></i>'
+                : '<i class="bi bi-moon-stars-fill text-primary" title="Nacht-Modus aktiv (Klicken für Tag-Modus)"></i>';
+            toggleBtn.setAttribute('aria-label', day ? 'Switch to night mode' : 'Switch to day mode');
+        }
+    }
+
+    // Apply immediately to avoid any visual flash
+    applyTheme();
+
+    document.addEventListener('DOMContentLoaded', () => {
+        applyTheme();
+
+        const userHud = document.querySelector('.user-hud');
+        if (userHud && !document.getElementById('dayNightToggle')) {
+            const toggleBtn = document.createElement('button');
+            toggleBtn.id = 'dayNightToggle';
+            toggleBtn.type = 'button';
+            toggleBtn.className = 'hud-icon-btn';
+            toggleBtn.title = 'Day / Night Banner Toggle';
+            toggleBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const currentlyDay = isDaytime();
+                localStorage.setItem('sqush_theme_mode', currentlyDay ? 'night' : 'day');
+                applyTheme();
+            });
+            userHud.prepend(toggleBtn);
+            applyTheme();
+        }
+    });
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // Review vote buttons (event delegation instead of one listener per button)

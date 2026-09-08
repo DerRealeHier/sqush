@@ -39,7 +39,7 @@ a {
 /* Main background image banner with crisp pixel rendering */
 .BackgroundImage {
     background-color: #2196f3;
-    background-image: url("../images/pixel_art.png");
+    background-image: url("../images/pixel_art2.png");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -50,8 +50,35 @@ a {
     overflow: hidden;
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
-    image-rendering: pixelated;
     image-rendering: crisp-edges;
+    transition: background-image 0.4s ease-in-out, background-color 0.4s ease-in-out;
+}
+
+/* Night Version (Version 1) - active at night or via toggle */
+.theme-night .BackgroundImage,
+body.theme-night .BackgroundImage,
+.BackgroundImage.night-mode {
+    background-color: #0b0c10;
+    background-image: url("../images/pixel_art.png");
+}
+
+/* Day Version (Version 2) - active at day or via toggle */
+.theme-day .BackgroundImage,
+body.theme-day .BackgroundImage,
+.BackgroundImage.day-mode {
+    background-color: #2196f3;
+    background-image: url("../images/pixel_art2.png");
+}
+
+/* Day/Night Toggle Button */
+#dayNightToggle .bi-sun-fill {
+    color: #e67e22 !important;
+}
+#dayNightToggle .bi-moon-stars-fill {
+    color: #3f51b5 !important;
+}
+#dayNightToggle:hover {
+    background-color: #ffeb3b;
 }
 
 /* Box container for the navbar */
