@@ -28,6 +28,21 @@ R2_BUCKET_NAME = os.environ.get("R2_BUCKET_NAME")
 R2_PUBLIC_URL = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
 R2_ENABLED = bool(R2_ACCOUNT_ID and R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY and R2_BUCKET_NAME)
 
+
+def _get_r2_endpoint():
+    raw = os.environ.get("R2_ENDPOINT_URL") or R2_ACCOUNT_ID or ""
+    import re
+    # strip accidental https://, http://, https/, etc. so we don't get double https://https/ xD
+    cleaned = re.sub(r"^(https?[:/]+)+", "", raw.strip(), flags=re.IGNORECASE).strip("/")
+    if not cleaned:
+        return ""
+    if ".r2.cloudflarestorage.com" in cleaned:
+        return f"https://{cleaned}"
+    return f"https://{cleaned}.r2.cloudflarestorage.com"
+
+
+R2_ENDPOINT_URL = _get_r2_endpoint()
+
 # slap bots in the face xD
 TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY")
 TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY")

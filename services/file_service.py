@@ -21,9 +21,10 @@ def get_r2_client():
     try:
         import boto3
         from botocore.config import Config
+        endpoint = config.R2_ENDPOINT_URL or f"https://{config.R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
         return boto3.client(
             "s3",
-            endpoint_url=f"https://{config.R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
+            endpoint_url=endpoint,
             aws_access_key_id=config.R2_ACCESS_KEY_ID,
             aws_secret_access_key=config.R2_SECRET_ACCESS_KEY,
             config=Config(signature_version="s3v4"),
@@ -61,7 +62,12 @@ def generate_presigned_download_url(key, filename=None, expires_in=3600):
     if filename:
         params["ResponseContentDisposition"] = f'attachment; filename="{filename}"'
     try:
-        return client.generate_presigned_url("get_object", Params=params, ExpiresIn=expires_in)
+        url = client.generate_presigned_url("get_object", Params=params, ExpiresIn=expires_in)
+        if url:
+            import re
+            # safety net: wipe any double https so browsers don't choke (:
+            url = re.sub(r"^https?://https?[:/]+", "https://", url)
+        return url
     except Exception as e:
         print(f"DEBUG: Failed to generate presigned download URL for {key}: {e}")
         return None
