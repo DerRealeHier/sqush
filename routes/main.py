@@ -1,5 +1,5 @@
 import json
-from flask import Blueprint, render_template, jsonify
+from flask import Blueprint, render_template, jsonify, request
 from flask_login import current_user, login_required
 from extensions import db
 from models.game import Game, Screenshot, Video, GameUpdate, UpdateVote, GameFollow
@@ -15,6 +15,39 @@ from services.game_service import (
 import config
 
 main_bp = Blueprint("main", __name__)
+
+
+@main_bp.route("/api/mail-health")
+def mail_health():
+    from flask import current_app
+    import config
+
+    mail_user = current_app.config.get("MAIL_USERNAME") or config.MAIL_USERNAME
+    mail_pwd = current_app.config.get("MAIL_PASSWORD") or config.MAIL_PASSWORD
+    mail_sender = current_app.config.get("MAIL_DEFAULT_SENDER") or config.MAIL_DEFAULT_SENDER
+    mail_server = current_app.config.get("MAIL_SERVER") or config.MAIL_SERVER
+
+    to_email = request.args.get("to")
+    send_result = None
+    if to_email:
+        from services.mail_service import send_email
+        try:
+            success = send_email(to_email, "Sqush Mail Test", "<h1>It works!</h1><p>Test from Sqush platform</p>")
+            send_result = "SUCCESS" if success else "FAILED"
+        except Exception as e:
+            send_result = f"EXCEPTION: {e}"
+
+    return jsonify({
+        "server": mail_server,
+        "has_username": bool(mail_user),
+        "username": mail_user or "(not set)",
+        "has_password": bool(mail_pwd),
+        "password_starts_with_re": bool(mail_pwd and mail_pwd.strip().startswith("re_")),
+        "password_length": len(mail_pwd) if mail_pwd else 0,
+        "default_sender": mail_sender or "(not set)",
+        "test_send_to": to_email,
+        "test_result": send_result,
+    })
 
 
 #This is for the home Page.
