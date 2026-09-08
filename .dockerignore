@@ -6,5 +6,6 @@ __pycache__
 .qodo
 instance/
 *.sqlite3
+!seeds/demo_seed.sqlite3
 *.db
 .env

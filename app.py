@@ -237,6 +237,26 @@ app = create_app()
 
 #initilaize the Database
 with app.app_context():
+    seed_file = os.path.join(app.root_path, "seeds", "demo_seed.sqlite3")
+    target_db = os.path.join(app.instance_path, "db.sqlite3")
+    if os.path.exists(seed_file):
+        try:
+            os.makedirs(app.instance_path, exist_ok=True)
+            if not os.path.exists(target_db):
+                import shutil
+                shutil.copyfile(seed_file, target_db)
+                print("DEBUG: Seeded database from seeds/demo_seed.sqlite3 (new install)")
+            else:
+                from models.game import Game
+                if Game.query.count() == 0:
+                    import shutil
+                    db.session.remove()
+                    db.engine.dispose()
+                    shutil.copyfile(seed_file, target_db)
+                    print("DEBUG: Seeded database from seeds/demo_seed.sqlite3 (was empty)")
+        except Exception as e:
+            print(f"DEBUG: Seed database check: {e}")
+
     print("DEBUG: Prüfe Database Tables und Spalten")
     try:
         db.create_all()
