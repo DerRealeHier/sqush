@@ -375,7 +375,7 @@
                 <a href="{{ url_for('game_detail', game_id=game.id) }}" class="btn btn-light btn-comic">
                     <i class="bi bi-eye-fill"></i> VIEW
                 </a>
-                <a href="{{ url_for('static', filename=game.download_path) }}" class="btn btn-success btn-comic" download>
+                <a href="{{ url_for('library.download_game', game_id=game.id) }}" class="btn btn-success btn-comic">
                     <i class="bi bi-download"></i> DOWNLOAD
                 </a>
                 {% if item.refund_available %}

@@ -210,3 +210,54 @@ def wishlist():
         game.tags_json = json.dumps(tags)
         games.append(game)
     return render_template("wishlist.html", games=games)
+
+
+@library_bp.route("/library/download/<int:game_id>")
+@login_required
+def download_game(game_id):
+    import os
+    from flask import current_app, send_from_directory
+    from services.file_service import generate_presigned_download_url
+    import config
+
+    game = Game.query.get_or_404(game_id)
+    has_purchased = Purchase.query.filter_by(
+        user_id=current_user.id,
+        game_id=game.id,
+        refunded=False
+    ).first() is not None
+
+    is_author = (game.developer_id == current_user.id)
+    is_admin = getattr(current_user, "is_admin", False)
+
+    if not (has_purchased or is_author or is_admin):
+        flash("You need to own this game before downloading it.", "error")
+        return redirect(url_for("main.game_detail", game_id=game.id))
+
+    if not game.download_path:
+        flash("No download file available for this game.", "error")
+        return redirect(url_for("library.library"))
+
+    # If Cloudflare R2 is enabled
+    if config.R2_ENABLED:
+        r2_key = game.download_path
+        if config.R2_PUBLIC_URL and r2_key.startswith(config.R2_PUBLIC_URL):
+            r2_key = r2_key[len(config.R2_PUBLIC_URL):].lstrip("/")
+        filename = f"{game.title}.zip"
+        if "." in game.download_path:
+            ext = game.download_path.rsplit(".", 1)[1]
+            filename = f"{game.title}.{ext}"
+        presigned_url = generate_presigned_download_url(r2_key, filename=filename)
+        if presigned_url:
+            return redirect(presigned_url)
+
+    # Local fallback
+    rel_path = game.download_path.lstrip("/\\")
+    full_path = os.path.join(current_app.root_path, "static", rel_path)
+    if os.path.exists(full_path):
+        directory = os.path.dirname(full_path)
+        fname = os.path.basename(full_path)
+        return send_from_directory(directory, fname, as_attachment=True)
+
+    flash("File not found on server.", "error")
+    return redirect(url_for("library.library"))

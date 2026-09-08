@@ -13,6 +13,9 @@ from services.file_service import (
     get_clamd_client,
     scan_filestorage_for_malware,
     save_game_file,
+    get_r2_client,
+    upload_to_r2,
+    generate_presigned_download_url,
 )
 from services.game_service import (
     calculate_game_revenue,

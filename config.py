@@ -7,15 +7,31 @@ load_dotenv()
 
 #secruity first huh? and then the Database
 SECRET_KEY = os.environ.get("SECRET_KEY", "fallback_secret_key_if_not_set")
-SQLALCHEMY_DATABASE_URI = "sqlite:///db.sqlite3"
+_db_uri = os.environ.get("DATABASE_URL", "sqlite:///db.sqlite3")
+if _db_uri.startswith("postgres://"):
+    _db_uri = _db_uri.replace("postgres://", "postgresql://", 1)
+SQLALCHEMY_DATABASE_URI = _db_uri
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-#Directory for Videos , Pictures and REAL GAME FILES. I wouldn't wanna pay for the Server ):
-UPLOAD_FOLDER = "static/uploads"
-AVATAR_FOLDER = "static/avatars"
+#Directory for Videos , Pictures and REAL GAME FILES.
+UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", "static/uploads")
+AVATAR_FOLDER = os.environ.get("AVATAR_FOLDER", "static/avatars")
 
 os.makedirs(AVATAR_FOLDER, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Cloudflare R2 Storage (S3-compatible object storage)
+R2_ACCOUNT_ID = os.environ.get("R2_ACCOUNT_ID")
+R2_ACCESS_KEY_ID = os.environ.get("R2_ACCESS_KEY_ID")
+R2_SECRET_ACCESS_KEY = os.environ.get("R2_SECRET_ACCESS_KEY")
+R2_BUCKET_NAME = os.environ.get("R2_BUCKET_NAME")
+R2_PUBLIC_URL = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
+R2_ENABLED = bool(R2_ACCOUNT_ID and R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY and R2_BUCKET_NAME)
+
+# Cloudflare Turnstile (bot protection)
+TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY")
+TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY")
+TURNSTILE_ENABLED = bool(TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY)
 
 # Hack Club OAuth
 HACKCLUB_CLIENT_ID = os.environ.get("HACKCLUB_CLIENT_ID")

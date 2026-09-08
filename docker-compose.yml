@@ -1,0 +1,18 @@
+services:
+  web:
+    build: .
+    container_name: sqush_app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - sqush_db:/app/instance
+      - sqush_uploads:/app/static/uploads
+      - sqush_avatars:/app/static/avatars
+
+volumes:
+  sqush_db:
+  sqush_uploads:
+  sqush_avatars:

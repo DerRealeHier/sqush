@@ -1,0 +1,9 @@
+.git
+.venv
+__pycache__
+*.pyc
+.idea
+.qodo
+*.sqlite3
+instance/*.sqlite3
+.env

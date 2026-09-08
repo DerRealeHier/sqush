@@ -462,9 +462,8 @@
 
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         {% if game.demo_path %}
-                        <a href="{{ url_for('static', filename=game.demo_path) }}"
+                        <a href="{{ url_for('main.download_demo', game_id=game.id) }}"
                            class="btn btn-outline-light btn-comic buy-panel-btn"
-                           download
                            title="Download free demo">
                             <i class="bi bi-controller"></i> TRY DEMO
                         </a>

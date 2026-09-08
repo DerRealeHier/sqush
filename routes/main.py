@@ -139,3 +139,37 @@ def increment_view(game_id):
     db.session.commit()
     update_daily_stats(game)
     return jsonify({"status": "success", "views": game.view_count})
+
+
+@main_bp.route("/game/<int:game_id>/demo")
+def download_demo(game_id):
+    import os
+    from flask import redirect, url_for, flash, current_app, send_from_directory
+    from services.file_service import generate_presigned_download_url
+
+    game = Game.query.get_or_404(game_id)
+    if not game.demo_path:
+        flash("No demo available for this game.", "error")
+        return redirect(url_for("main.game_detail", game_id=game.id))
+
+    if config.R2_ENABLED:
+        r2_key = game.demo_path
+        if config.R2_PUBLIC_URL and r2_key.startswith(config.R2_PUBLIC_URL):
+            r2_key = r2_key[len(config.R2_PUBLIC_URL):].lstrip("/")
+        filename = f"{game.title}_demo.zip"
+        if "." in game.demo_path:
+            ext = game.demo_path.rsplit(".", 1)[1]
+            filename = f"{game.title}_demo.{ext}"
+        presigned_url = generate_presigned_download_url(r2_key, filename=filename)
+        if presigned_url:
+            return redirect(presigned_url)
+
+    rel_path = game.demo_path.lstrip("/\\")
+    full_path = os.path.join(current_app.root_path, "static", rel_path)
+    if os.path.exists(full_path):
+        directory = os.path.dirname(full_path)
+        fname = os.path.basename(full_path)
+        return send_from_directory(directory, fname, as_attachment=True)
+
+    flash("Demo file not found on server.", "error")
+    return redirect(url_for("main.game_detail", game_id=game.id))
