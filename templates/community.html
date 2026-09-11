@@ -118,6 +118,7 @@
             <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('settings') }}"><i class="bi bi-gear-fill"></i> Settings</a></li>
             {% endif %}
             <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('library') }}"><i class="bi bi-collection-play-fill"></i> Library</a></li>
+            <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('ban_log.index') }}"><i class="bi bi-shield-slash"></i> Ban Log</a></li>
             {% if current_user.is_authenticated and current_user.role == 'dev' %}
             <li><a class="dropdown-item comic-dropdown-item text-danger" href="/dashboard"><i class="bi bi-speedometer2"></i> Dev Dashboard</a></li>
             {% endif %}
@@ -138,6 +139,10 @@
 
 <div class="container py-5">
     <div class="filter-panel mb-5 text-center">
+        <div class="d-flex justify-content-center gap-3 mb-3">
+            <a href="/community" class="btn comic-btn-store px-3 py-1 text-decoration-none" style="font-size: 1rem;"><i class="bi bi-people-fill"></i> Users</a>
+            <a href="{{ url_for('ban_log.index') }}" class="btn comic-btn-secondary px-3 py-1 text-decoration-none" style="font-size: 1rem; border: 2px solid #000; box-shadow: 2px 2px 0px #000;"><i class="bi bi-shield-slash"></i> Public Ban Log</a>
+        </div>
         <label class="filter-label fs-4 mb-3">FIND FRIENDS</label>
         <form method="POST" class="d-flex gap-3 justify-content-center flex-wrap">
             <input type="text" name="search" class="form-control filter-input p-2" style="max-width:320px;" placeholder="SEARCH USERNAMES...">
