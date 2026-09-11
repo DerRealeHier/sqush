@@ -104,7 +104,7 @@ RATELIMIT_STORAGE_URI = os.environ.get("RATELIMIT_STORAGE_URI", "memory://")
 
 # Groq AI content moderation config (:
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
-GROQ_MODERATION_INTERVAL_SECONDS = int(os.environ.get("GROQ_MODERATION_INTERVAL_SECONDS", 600))  # 10 minutes
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
+GROQ_MODERATION_INTERVAL_SECONDS = int(os.environ.get("GROQ_MODERATION_INTERVAL_SECONDS", 60))  # 60 seconds
 AI_MODERATION_ENABLED = os.environ.get("AI_MODERATION_ENABLED", "true").lower() == "true"
 

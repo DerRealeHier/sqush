@@ -84,7 +84,7 @@ def call_groq_moderation(items: list[dict]) -> list[dict]:
     except Exception:
         pass
     if not model_name:
-        model_name = config.GROQ_MODEL or "llama-3.3-70b-versatile"
+        model_name = config.GROQ_MODEL or "openai/gpt-oss-120b"
 
     prompt_user_content = json.dumps(items, ensure_ascii=False, indent=2)
 
@@ -358,6 +358,14 @@ def run_moderation_scan(app=None) -> dict:
 
     items_to_moderate = []
 
+    new_last_user_id = state.last_user_id
+    new_last_review_id = state.last_review_id
+    new_last_profile_comment_id = state.last_profile_comment_id
+    new_last_update_comment_id = state.last_update_comment_id
+    new_last_roadmap_comment_id = state.last_roadmap_comment_id
+    new_last_roadmap_item_id = state.last_roadmap_item_id
+    new_last_message_id = state.last_message_id
+
     # 1. New users (checking username)
     new_users = User.query.filter(User.id > state.last_user_id).order_by(User.id.asc()).limit(50).all()
     for u in new_users:
@@ -371,7 +379,7 @@ def run_moderation_scan(app=None) -> dict:
             "text": f"Username: {u.username}",
         })
     if new_users:
-        state.last_user_id = max(u.id for u in new_users)
+        new_last_user_id = max(u.id for u in new_users)
 
     # 2. New reviews
     new_reviews = Review.query.filter(Review.id > state.last_review_id).order_by(Review.id.asc()).limit(50).all()
@@ -388,7 +396,7 @@ def run_moderation_scan(app=None) -> dict:
                 "text": r.comment,
             })
     if new_reviews:
-        state.last_review_id = max(r.id for r in new_reviews)
+        new_last_review_id = max(r.id for r in new_reviews)
 
     # 3. New profile comments
     new_prof_comments = ProfileComment.query.filter(ProfileComment.id > state.last_profile_comment_id).order_by(ProfileComment.id.asc()).limit(50).all()
@@ -404,7 +412,7 @@ def run_moderation_scan(app=None) -> dict:
             "text": c.content,
         })
     if new_prof_comments:
-        state.last_profile_comment_id = max(c.id for c in new_prof_comments)
+        new_last_profile_comment_id = max(c.id for c in new_prof_comments)
 
     # 4. New game update comments
     new_update_comments = UpdateComment.query.filter(UpdateComment.id > state.last_update_comment_id).order_by(UpdateComment.id.asc()).limit(50).all()
@@ -420,7 +428,7 @@ def run_moderation_scan(app=None) -> dict:
             "text": c.content,
         })
     if new_update_comments:
-        state.last_update_comment_id = max(c.id for c in new_update_comments)
+        new_last_update_comment_id = max(c.id for c in new_update_comments)
 
     # 5. New roadmap comments
     new_rdm_comments = RoadmapComment.query.filter(RoadmapComment.id > state.last_roadmap_comment_id).order_by(RoadmapComment.id.asc()).limit(50).all()
@@ -436,7 +444,7 @@ def run_moderation_scan(app=None) -> dict:
             "text": c.content,
         })
     if new_rdm_comments:
-        state.last_roadmap_comment_id = max(c.id for c in new_rdm_comments)
+        new_last_roadmap_comment_id = max(c.id for c in new_rdm_comments)
 
     # 6. New roadmap items
     new_rdm_items = RoadmapItem.query.filter(RoadmapItem.id > state.last_roadmap_item_id).order_by(RoadmapItem.id.asc()).limit(50).all()
@@ -452,7 +460,7 @@ def run_moderation_scan(app=None) -> dict:
             "text": f"Title: {i.title}\n{i.description or ''}",
         })
     if new_rdm_items:
-        state.last_roadmap_item_id = max(i.id for i in new_rdm_items)
+        new_last_roadmap_item_id = max(i.id for i in new_rdm_items)
 
     # 7. New direct messages
     new_dms = DirectMessage.query.filter(DirectMessage.id > state.last_message_id).order_by(DirectMessage.id.asc()).limit(50).all()
@@ -468,7 +476,7 @@ def run_moderation_scan(app=None) -> dict:
             "text": m.content,
         })
     if new_dms:
-        state.last_message_id = max(m.id for m in new_dms)
+        new_last_message_id = max(m.id for m in new_dms)
 
     state.last_scanned_at = datetime.now(timezone.utc)
 
@@ -479,6 +487,21 @@ def run_moderation_scan(app=None) -> dict:
 
     # Call Groq AI API
     results = call_groq_moderation(items_to_moderate)
+    if not results and items_to_moderate:
+        logger.error("Groq moderation returned no results or failed; not advancing scan state.")
+        state.status = "failed"
+        db.session.commit()
+        return {"items_scanned": 0, "bans_issued": 0, "status": "failed"}
+
+    # Only advance scan state pointers if Groq moderation responded
+    state.last_user_id = new_last_user_id
+    state.last_review_id = new_last_review_id
+    state.last_profile_comment_id = new_last_profile_comment_id
+    state.last_update_comment_id = new_last_update_comment_id
+    state.last_roadmap_comment_id = new_last_roadmap_comment_id
+    state.last_roadmap_item_id = new_last_roadmap_item_id
+    state.last_message_id = new_last_message_id
+
     item_map = {str(item["item_id"]): item for item in items_to_moderate}
 
     bans_count = 0
@@ -536,12 +559,13 @@ def run_moderation_scan(app=None) -> dict:
     }
 
 
-def start_background_moderation(app, interval_seconds: int = 600):
+def start_background_moderation(app, interval_seconds: int = 60):
     """Starts a background daemon thread that runs moderation scans every interval_seconds."""
     def worker():
         logger.info(f"Groq AI Moderation background worker started (interval: {interval_seconds}s).")
+        # Quick initial check after 5s so new items don't wait a full interval
+        time.sleep(5)
         while True:
-            time.sleep(interval_seconds)
             try:
                 with app.app_context():
                     res = run_moderation_scan(app)
@@ -549,6 +573,7 @@ def start_background_moderation(app, interval_seconds: int = 600):
                         logger.warning(f"AI Moderation scan complete: {res['bans_issued']} ban(s) issued from {res['items_scanned']} items.")
             except Exception as e:
                 logger.error(f"Error in moderation background worker: {e}")
+            time.sleep(interval_seconds)
 
     thread = threading.Thread(target=worker, daemon=True, name="GroqModerationWorker")
     thread.start()
