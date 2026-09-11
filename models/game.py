@@ -93,6 +93,7 @@ class Review(db.Model):
     comment = db.Column(db.Text, nullable=True)
     helpful_count = db.Column(db.Integer, default=0)
     funny_count = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     user = db.relationship("User", backref="reviews")
     votes = db.relationship("ReviewVote", backref="review", lazy=True)
 
