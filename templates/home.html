@@ -126,6 +126,7 @@
             <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('settings') }}"><i class="bi bi-gear-fill"></i> Settings</a></li>
             {% endif %}
             <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('library') }}"><i class="bi bi-collection-play-fill"></i> Library</a></li>
+            <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('ban_log.index') }}"><i class="bi bi-shield-slash"></i> Ban Log</a></li>
             {% if current_user.is_authenticated and current_user.role == 'dev' %}
             <li><a class="dropdown-item comic-dropdown-item text-danger" href="/dashboard"><i class="bi bi-speedometer2"></i> Dev Dashboard</a></li>
             {% endif %}
