@@ -62,6 +62,10 @@ Here is everything built into sqush that you can try out:
 - **Security & Malware Scanning:** Optional ClamAV antivirus scanning for game uploads, rate limiting via Flask Limiter, and Cloudflare Turnstile bot protection (A bit of over engineering, this Store cant even handle 1000 games. at least I think so=)
 - **Flexible Auth:** Email/password registration with email verification, OTP 2FA, Google login (Firebase), and Hack Club OAuth.
 
+### Moderation
+- **AI:** AI is now constantly scanning for new messages and moderating them.
+- **Banning records:** banned accounts get shown on the wall of shame. Every single ban is being tracked publicly.
+- **Messages** Messages of the banned User get automatically deleted. Even if it was not against the guidelines.
 ---
 
 ## Tech Stack
