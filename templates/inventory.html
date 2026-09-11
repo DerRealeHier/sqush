@@ -16,15 +16,64 @@
             box-shadow: 8px 8px 0 #000;
             padding: 24px;
             margin-bottom: 28px;
+            color: #000;
+        }
+        .inventory-hero h1 {
+            color: #000 !important;
+            text-shadow: none !important;
+        }
+        .inventory-hero p {
+            color: #111 !important;
         }
         .stat-badge {
             background: #fff;
+            color: #000;
             border: 3px solid #000;
             box-shadow: 4px 4px 0 #000;
-            padding: 10px 18px;
+            padding: 8px 16px;
             font-family: 'Bangers', sans-serif;
             font-size: 1.3rem;
             letter-spacing: 1px;
+            min-width: 110px;
+        }
+        .stat-badge-label {
+            color: #4b5563;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+            line-height: 1.2;
+        }
+        .stat-badge-value {
+            color: #000;
+            font-size: 1.35rem;
+            line-height: 1.1;
+            display: block;
+        }
+        .stat-badge-btn {
+            background: #000 !important;
+            color: #fff !important;
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0 #000;
+            padding: 8px 16px;
+            font-family: 'Bangers', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            transition: transform .12s, box-shadow .12s, background-color .12s;
+        }
+        .stat-badge-btn:hover {
+            background: #212529 !important;
+            color: var(--yellow, #ffe14d) !important;
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 #000;
         }
         .comic-tab-btn {
             font-family: 'Bangers', sans-serif;
@@ -202,8 +251,63 @@
             border: 4px solid #000;
             box-shadow: 6px 6px 0 #000;
             background: #fff;
-            padding: 20px;
-            margin-bottom: 20px;
+            color: #111;
+            padding: 22px;
+            margin-bottom: 24px;
+        }
+        .recipe-box h4 {
+            color: #000 !important;
+            font-family: 'Bangers', sans-serif;
+            letter-spacing: 1px;
+        }
+        .recipe-box p {
+            color: #2b2d42 !important;
+            font-family: 'Comic Neue', cursive, sans-serif;
+            font-size: 1.02rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .recipe-box ul, .recipe-box li {
+            color: #212529 !important;
+            font-family: 'Comic Neue', cursive, sans-serif;
+            font-weight: 700;
+        }
+        .recipe-progress-card {
+            background: #f8fafc;
+            border: 2px solid #000;
+            padding: 10px 14px;
+            box-shadow: 3px 3px 0 #000;
+            margin-bottom: 16px;
+        }
+        .btn-craft-action {
+            border: 3px solid #000 !important;
+            box-shadow: 4px 4px 0 #000 !important;
+            font-family: 'Bangers', sans-serif !important;
+            letter-spacing: 1px;
+            font-size: 1.15rem;
+            text-transform: uppercase;
+            padding: 10px 16px;
+            transition: all 0.12s ease;
+        }
+        .btn-craft-action:not(:disabled):hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 #000 !important;
+            filter: brightness(1.1);
+        }
+        .btn-craft-action:disabled {
+            background: #64748b !important;
+            color: #f8fafc !important;
+            opacity: 0.95 !important;
+            cursor: not-allowed;
+        }
+        .sub-heading-text {
+            color: #cbd5e1;
+            font-family: 'Comic Neue', cursive, sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+        .comic-card .text-muted {
+            color: #cbd5e1 !important;
         }
         /* Loot Drop Modal */
         .loot-modal-backdrop {
@@ -218,6 +322,7 @@
         }
         .loot-modal-box {
             background: var(--yellow, #ffe14d);
+            color: #000;
             border: 6px solid #000;
             box-shadow: 12px 12px 0 #000;
             max-width: 440px;
@@ -225,6 +330,9 @@
             padding: 30px;
             text-align: center;
             animation: popIn .25s ease-out;
+        }
+        .loot-modal-box p {
+            color: #000 !important;
         }
         @keyframes popIn {
             0% { transform: scale(0.7); opacity: 0; }
@@ -366,29 +474,29 @@
     <div class="inventory-hero">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
-                <h1 class="display-5 mb-1" style="font-family:'Bangers',sans-serif; letter-spacing:1.5px; text-shadow:2px 2px 0 #fff;">
+                <h1 class="display-5 mb-1" style="font-family:'Bangers',sans-serif; letter-spacing:1.5px;">
                     <i class="bi bi-collection-fill me-2"></i> COMIC LOOT & INVENTORY
                 </h1>
-                <p class="mb-0 fw-bold" style="font-family:'Comic Neue',cursive; font-size:1.1rem;">
+                <p class="mb-0 fw-bold" style="font-family:'Comic Neue',cursive; font-size:1.15rem;">
                     Drops unlocked after each purchase or game review. Trade duplicates with homies or craft badges!
                 </p>
             </div>
             <div class="d-flex flex-wrap gap-2">
                 <div class="stat-badge text-center">
-                    <span class="d-block text-muted" style="font-size:0.75rem; text-transform:uppercase;">Collected</span>
-                    {{ unique_owned }} / {{ total_catalog }}
+                    <span class="stat-badge-label d-block">Collected</span>
+                    <span class="stat-badge-value">{{ unique_owned }} / {{ total_catalog }}</span>
                 </div>
                 <div class="stat-badge text-center">
-                    <span class="d-block text-muted" style="font-size:0.75rem; text-transform:uppercase;">Completion</span>
-                    {{ completion_pct }}%
+                    <span class="stat-badge-label d-block">Completion</span>
+                    <span class="stat-badge-value">{{ completion_pct }}%</span>
                 </div>
                 <div class="stat-badge text-center">
-                    <span class="d-block text-muted" style="font-size:0.75rem; text-transform:uppercase;">Duplicates</span>
-                    {{ total_duplicates }}
+                    <span class="stat-badge-label d-block">Duplicates</span>
+                    <span class="stat-badge-value">{{ total_duplicates }}</span>
                 </div>
                 <!-- Dev test drop button -->
                 <form action="{{ url_for('inventory.test_drop') }}" method="POST" class="d-inline">
-                    <button type="submit" class="stat-badge btn btn-dark" style="color:#fff; cursor:pointer;" title="Pull a test card">
+                    <button type="submit" class="stat-badge-btn" title="Pull a test card">
                         <i class="bi bi-dice-5-fill me-1"></i> TEST PULL
                     </button>
                 </form>
@@ -421,7 +529,7 @@
             <button class="filter-chip" onclick="filterCards('legendary', this)">LEGENDARY</button>
             <button class="filter-chip" onclick="filterCards('duplicate', this)">DUPLICATES ONLY</button>
         </div>
-        <div class="text-muted small fw-bold">
+        <div class="small fw-bold" style="color:#cbd5e1; font-family:'Comic Neue',cursive; font-size:0.95rem;">
             Showing {{ binder|length }} cards from Sqush Genesis Vol. 1
         </div>
     </div>
@@ -497,47 +605,61 @@
     {% elif tab == 'crafting' %}
     <div class="row">
         <div class="col-12 col-lg-8">
-            <h2 class="mb-3" style="font-family:'Bangers',sans-serif; letter-spacing:1px;">
-                <i class="bi bi-hammer me-2"></i> ABZEICHEN-SCHMIEDE (CRAFTING LAB)
+            <h2 class="mb-2 text-white" style="font-family:'Bangers',sans-serif; letter-spacing:1px;">
+                <i class="bi bi-hammer me-2 text-warning"></i> ABZEICHEN-SCHMIEDE (CRAFTING LAB)
             </h2>
-            <p class="text-muted fw-bold mb-4">
+            <p class="sub-heading-text mb-4">
                 Recycle your duplicate cards to forge exclusive badges. Crafted badges can be featured on your public profile!
             </p>
 
             {% for r in recipes %}
             <div class="recipe-box">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                     <div class="d-flex align-items-center gap-3">
-                        <div style="background: {{ r.color }}; border: 3px solid #000; box-shadow: 3px 3px 0 #000; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi {{ r.icon }} fs-3 text-dark"></i>
+                        <div style="background: {{ r.color }}; border: 3px solid #000; box-shadow: 3px 3px 0 #000; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi {{ r.icon }} fs-2 text-dark"></i>
                         </div>
                         <div>
-                            <h4 class="mb-0" style="font-family:'Bangers',sans-serif; letter-spacing:1px;">{{ r.name }}</h4>
-                            <span class="badge bg-dark">{{ r.required_rarity|upper }} DUPLICATES</span>
+                            <h4 class="mb-0" style="font-family:'Bangers',sans-serif; letter-spacing:1px; color:#000;">{{ r.name }}</h4>
+                            <span class="badge bg-dark" style="font-family:'Bangers',sans-serif; letter-spacing:0.5px; border:2px solid #000;">{{ r.required_rarity|upper }} DUPLICATES</span>
                         </div>
                     </div>
                     {% if r.already_unlocked %}
-                    <span class="badge bg-success p-2" style="font-family:'Bangers',sans-serif; font-size:1rem; border:2px solid #000;">
+                    <span class="badge bg-success p-2 text-white" style="font-family:'Bangers',sans-serif; font-size:1rem; border:2px solid #000; box-shadow:2px 2px 0 #000;">
                         <i class="bi bi-check-circle-fill me-1"></i> ALREADY CRAFTED
                     </span>
                     {% endif %}
                 </div>
 
-                <p class="mb-3">{{ r.description }}</p>
+                <p class="mb-3" style="color:#2b2d42 !important; font-size:1.05rem; font-family:'Comic Neue',cursive; font-weight:700;">{{ r.description }}</p>
 
                 <!-- Progress gauge -->
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="fw-bold">
-                        Progress: {{ r.available_dupes }} / {{ r.required_count }} duplicates available
+                <div class="recipe-progress-card d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="fw-bold text-dark" style="font-family:'Comic Neue',cursive; font-size:1.05rem;">
+                        Progress: <span class="badge bg-dark text-warning border border-dark px-2 py-1 fs-6">{{ r.available_dupes }} / {{ r.required_count }}</span> duplicates available
                     </div>
-                    <div class="progress" style="height: 18px; width: 50%; border: 2px solid #000; border-radius: 0;">
-                        <div class="progress-bar" style="width: {{ (r.available_dupes / r.required_count * 100)|int if r.required_count else 0 }}%; background: var(--green,#33d17a);"></div>
+                    <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end" style="max-width: 320px; min-width: 200px;">
+                        <div class="progress w-100" style="height: 20px; border: 2px solid #000; border-radius: 0; background: #e2e8f0;">
+                            <div class="progress-bar fw-bold text-dark" style="width: {{ [((r.available_dupes / r.required_count * 100)|int if r.required_count else 0), 100]|min }}%; background: var(--green,#33d17a); font-family:'Bangers',sans-serif; font-size:0.9rem; line-height: 20px;">
+                                {% if r.available_dupes > 0 %}{{ (r.available_dupes / r.required_count * 100)|int }}%{% endif %}
+                            </div>
+                        </div>
+                        <span class="badge bg-dark" style="font-family:'Bangers',sans-serif; font-size:0.9rem; border:1px solid #000;">
+                            {{ (r.available_dupes / r.required_count * 100)|int if r.required_count else 0 }}%
+                        </span>
                     </div>
                 </div>
 
                 <form action="{{ url_for('inventory.craft', recipe_key=r.key) }}" method="POST">
-                    <button type="submit" class="btn btn-comic text-white w-100" style="background: var(--blue,#3aa0ff);" {% if not r.can_craft %}disabled{% endif %}>
-                        <i class="bi bi-hammer me-1"></i> CRAFT BADGE (REQUIRES {{ r.required_count }} DUPES)
+                    <button type="submit" class="btn btn-craft-action text-white w-100"
+                            style="{% if r.can_craft %}background: var(--blue,#3aa0ff);{% else %}background: #64748b;{% endif %}"
+                            {% if not r.can_craft %}disabled{% endif %}>
+                        <i class="bi bi-hammer me-1"></i>
+                        {% if r.can_craft %}
+                        CRAFT BADGE (FORGE NOW!)
+                        {% else %}
+                        CRAFT BADGE (REQUIRES {{ r.required_count }} DUPES - NEED {{ r.required_count - r.available_dupes }} MORE)
+                        {% endif %}
                     </button>
                 </form>
             </div>
@@ -545,17 +667,20 @@
         </div>
 
         <div class="col-12 col-lg-4">
-            <div class="recipe-box bg-light">
-                <h4 style="font-family:'Bangers',sans-serif; letter-spacing:1px;">
-                    <i class="bi bi-info-circle-fill me-1"></i> HOW CRAFTING WORKS
-                </h4>
-                <ul class="small mb-3 ps-3">
-                    <li>Only <strong>duplicate cards</strong> (`quantity > 1`) are consumed. Your original copy is never lost!</li>
-                    <li>Badges you forge are permanently added to your profile showcase.</li>
-                    <li>Crafting triggers in-app notifications and unlocks profile perks.</li>
+            <div class="recipe-box" style="background: #fff;">
+                <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom border-dark border-2">
+                    <i class="bi bi-info-circle-fill fs-3 text-primary"></i>
+                    <h4 class="mb-0 text-dark" style="font-family:'Bangers',sans-serif; letter-spacing:1px;">
+                        HOW CRAFTING WORKS
+                    </h4>
+                </div>
+                <ul class="mb-4 ps-3" style="color:#212529 !important; font-family:'Comic Neue',cursive; font-size:1rem; line-height:1.6; font-weight:700;">
+                    <li class="mb-2">Only <span class="badge bg-dark text-warning">duplicate cards</span> (<code style="color:#e11d48; background:#f1f5f9; padding:2px 5px; border:1px solid #cbd5e1;">quantity &gt; 1</code>) are consumed. Your original copy is never lost!</li>
+                    <li class="mb-2">Badges you forge are permanently added to your profile showcase.</li>
+                    <li class="mb-2">Crafting triggers in-app notifications and unlocks profile perks.</li>
                 </ul>
                 <div class="text-center pt-2">
-                    <a href="{{ url_for('messages.inbox') }}" class="btn btn-dark btn-sm w-100 fw-bold" style="font-family:'Bangers',sans-serif; letter-spacing:1px; border:2px solid #000;">
+                    <a href="{{ url_for('messages.inbox') }}" class="btn btn-dark btn-craft-action text-white w-100 fw-bold" style="background:#000;">
                         <i class="bi bi-chat-dots-fill me-1"></i> OR TRADE DUPES IN DMS!
                     </a>
                 </div>
@@ -565,36 +690,36 @@
 
     <!-- TAB 3: TRADE HISTORY -->
     {% elif tab == 'trades' %}
-    <h2 class="mb-3" style="font-family:'Bangers',sans-serif; letter-spacing:1px;">
-        <i class="bi bi-arrow-left-right me-2"></i> TAUSCH-VERLAUF (TRADE HISTORY)
+    <h2 class="mb-2 text-white" style="font-family:'Bangers',sans-serif; letter-spacing:1px;">
+        <i class="bi bi-arrow-left-right me-2 text-info"></i> TAUSCH-VERLAUF (TRADE HISTORY)
     </h2>
-    <p class="text-muted fw-bold mb-4">
+    <p class="sub-heading-text mb-4">
         Overview of all card swap proposals with your homies via the DM system.
     </p>
 
     {% if trade_items %}
-    <div class="list-group" style="border: 3px solid #000; box-shadow: 6px 6px 0 #000;">
+    <div class="list-group" style="border: 4px solid #000; box-shadow: 6px 6px 0 #000;">
         {% for item in trade_items %}
-        <div class="list-group-item p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="list-group-item p-3 d-flex justify-content-between align-items-center flex-wrap gap-2" style="background:#fff; color:#000; border-bottom:2px solid #000;">
             <div class="d-flex align-items-center gap-3">
-                <div style="width: 44px; height: 44px; border: 2px solid #000; display: flex; align-items: center; justify-content: center; background: #fff;">
-                    <i class="bi bi-arrow-left-right fs-4"></i>
+                <div style="width: 44px; height: 44px; border: 2px solid #000; display: flex; align-items: center; justify-content: center; background: #ffe14d; box-shadow:2px 2px 0 #000;">
+                    <i class="bi bi-arrow-left-right fs-4 text-dark"></i>
                 </div>
                 <div>
-                    <div class="fw-bold" style="font-family:'Bangers',sans-serif; font-size:1.15rem;">
+                    <div class="fw-bold text-dark" style="font-family:'Bangers',sans-serif; font-size:1.2rem;">
                         {% if item.is_sender %}
-                        Offered to <a href="{{ url_for('messages.conversation', username=item.other_user.username) }}">{{ item.other_user.username }}</a>:
+                        Offered to <a href="{{ url_for('messages.conversation', username=item.other_user.username) }}" style="color:#0d6efd; text-decoration:underline;">{{ item.other_user.username }}</a>:
                         {% else %}
-                        Received from <a href="{{ url_for('messages.conversation', username=item.other_user.username) }}">{{ item.other_user.username }}</a>:
+                        Received from <a href="{{ url_for('messages.conversation', username=item.other_user.username) }}" style="color:#0d6efd; text-decoration:underline;">{{ item.other_user.username }}</a>:
                         {% endif %}
-                        <span class="text-primary">{{ item.offered_card.name if item.offered_card else item.trade.offered_card_key }}</span>
+                        <span class="badge bg-primary fs-6">{{ item.offered_card.name if item.offered_card else item.trade.offered_card_key }}</span>
                         {% if item.requested_card %}
-                        for <span class="text-warning">{{ item.requested_card.name }}</span>
+                        for <span class="badge bg-warning text-dark fs-6">{{ item.requested_card.name }}</span>
                         {% else %}
-                        (Homie Gift)
+                        <span class="badge bg-secondary fs-6">(Homie Gift)</span>
                         {% endif %}
                     </div>
-                    <small class="text-muted">
+                    <small class="text-secondary fw-bold" style="font-size:0.85rem;">
                         {{ item.trade.created_at.strftime('%d.%m.%Y %H:%M') }}
                     </small>
                 </div>
@@ -602,10 +727,10 @@
 
             <div class="d-flex align-items-center gap-2">
                 <span class="badge {% if item.trade.status=='accepted' %}bg-success{% elif item.trade.status=='declined' %}bg-secondary{% elif item.trade.status=='cancelled' %}bg-warning text-dark{% else %}bg-primary{% endif %} p-2"
-                      style="font-family:'Bangers',sans-serif; letter-spacing:1px; border:2px solid #000;">
+                      style="font-family:'Bangers',sans-serif; letter-spacing:1px; border:2px solid #000; box-shadow:2px 2px 0 #000; font-size:0.95rem;">
                     STATUS: {{ item.trade.status|upper }}
                 </span>
-                <a href="{{ url_for('messages.conversation', username=item.other_user.username) }}" class="btn btn-outline-dark btn-sm fw-bold">
+                <a href="{{ url_for('messages.conversation', username=item.other_user.username) }}" class="btn btn-dark btn-sm fw-bold" style="border:2px solid #000; box-shadow:2px 2px 0 #000;">
                     Open DM
                 </a>
             </div>
@@ -613,10 +738,10 @@
         {% endfor %}
     </div>
     {% else %}
-    <div class="comic-frame text-center py-5 bg-white">
-        <h4 style="font-family:'Bangers',sans-serif;">No card trades yet!</h4>
-        <p class="text-muted">Hop into your DMs and click [Trade Cards] to propose a swap with a homie (:</p>
-        <a href="{{ url_for('messages.inbox') }}" class="btn btn-primary btn-comic">Go to Messages</a>
+    <div class="comic-frame text-center py-5" style="background:#fff; color:#000; border:4px solid #000; box-shadow:6px 6px 0 #000;">
+        <h4 style="font-family:'Bangers',sans-serif; color:#000; font-size:1.8rem;">No card trades yet!</h4>
+        <p class="text-secondary fw-bold" style="font-family:'Comic Neue',cursive; font-size:1.1rem;">Hop into your DMs and click [Trade Cards] to propose a swap with a homie (:</p>
+        <a href="{{ url_for('messages.inbox') }}" class="btn btn-primary btn-comic text-white px-4 py-2 mt-2">Go to Messages</a>
     </div>
     {% endif %}
 
@@ -628,10 +753,10 @@
 {% if recent_drop %}
 <div class="loot-modal-backdrop" id="lootModal">
     <div class="loot-modal-box">
-        <h2 style="font-family:'Bangers',sans-serif; letter-spacing:2px; font-size:2.2rem; text-shadow:2px 2px 0 #000; color:#fff;">
-            [POW! LOOT DROP]
+        <h2 style="font-family:'Bangers',sans-serif; letter-spacing:2px; font-size:2.2rem; text-shadow:none; color:#000;">
+            💥 [POW! LOOT DROP]
         </h2>
-        <p class="fw-bold mb-3" style="font-family:'Comic Neue',cursive;">
+        <p class="fw-bold mb-3 text-dark" style="font-family:'Comic Neue',cursive; font-size:1.15rem;">
             You pulled a digital comic card from your {{ recent_drop.source }}!
         </p>
 
