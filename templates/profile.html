@@ -79,6 +79,11 @@
                 {% endif %}
             </a>
 
+            <!-- Inventory Icon Button -->
+            <a href="{{ url_for('inventory.index') }}" class="hud-icon-btn" title="Comic Inventory">
+                <i class="bi bi-collection-fill"></i>
+            </a>
+
             <!-- Settings Icon Button -->
             <a href="{{ url_for('settings') }}" class="hud-icon-btn" title="Settings">
                 <i class="bi bi-gear-fill"></i>
@@ -236,6 +241,31 @@
                 <i class="bi bi-question-diamond me-1"></i> No badges yet - play, buy, connect!
             </div>
             {% endif %}
+
+            <!-- Comic Cards Showcase -->
+            <div class="comic-cards-showcase mt-3 p-3 text-start" style="background:#fff; color:#000; border:3px solid #000; box-shadow:5px 5px 0 #000;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold" style="font-family:'Bangers',sans-serif; font-size:1.15rem; letter-spacing:1px;">
+                        <i class="bi bi-collection-fill text-primary me-1"></i> COMIC CARDS ({{ user_cards|length }} / {{ total_catalog_count }})
+                    </span>
+                    <a href="{{ url_for('inventory.index') }}" class="btn btn-dark btn-sm fw-bold" style="font-family:'Bangers',sans-serif; letter-spacing:0.5px; border:2px solid #000;">
+                        VIEW BINDER
+                    </a>
+                </div>
+                {% if user_cards %}
+                <div class="d-flex gap-2 overflow-x-auto py-1">
+                    {% for card in user_cards[:6] %}
+                    <div class="p-2 text-center" style="min-width: 90px; border: 2px solid #000; background: {{ card.bg_color }}; color: #fff; border-radius: 6px;">
+                        <i class="bi {{ card.icon }} fs-4 d-block" style="color: {{ card.accent_color }};"></i>
+                        <small class="d-block fw-bold text-truncate" style="font-family:'Bangers',sans-serif; font-size:0.8rem; color:{{ card.accent_color }};" title="{{ card.name }}">{{ card.name }}</small>
+                        <span class="badge bg-dark" style="font-size:0.6rem;">x{{ card.quantity }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <small class="text-muted fst-italic">No comic cards unlocked yet. Pull cards from purchases and reviews!</small>
+                {% endif %}
+            </div>
         </div>
 
         {% if current_user.id == user.id %}

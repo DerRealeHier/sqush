@@ -45,6 +45,20 @@ from services.badge_service import (
     set_featured_badge,
     grant_manual_badge,
 )
+from services.card_service import (
+    CARD_DEFINITIONS,
+    CRAFTING_RECIPES,
+    get_card_definition,
+    get_all_card_definitions,
+    roll_random_card,
+    award_card_to_user,
+    get_user_inventory,
+    get_user_duplicates,
+    get_crafting_recipes_status,
+    execute_craft,
+    propose_trade,
+    execute_trade_action,
+)
 
 __all__ = [
     "connected_login_methods_count",
@@ -85,4 +99,16 @@ __all__ = [
     "get_featured_badge",
     "set_featured_badge",
     "grant_manual_badge",
+    "CARD_DEFINITIONS",
+    "CRAFTING_RECIPES",
+    "get_card_definition",
+    "get_all_card_definitions",
+    "roll_random_card",
+    "award_card_to_user",
+    "get_user_inventory",
+    "get_user_duplicates",
+    "get_crafting_recipes_status",
+    "execute_craft",
+    "propose_trade",
+    "execute_trade_action",
 ]

@@ -5,6 +5,14 @@ from extensions import db
 from models.user import User, Notification
 from models.game import Game
 from models.message import DirectMessage
+from models.card import CardTrade
+from services.card_service import (
+    propose_trade,
+    execute_trade_action,
+    get_user_duplicates,
+    get_all_card_definitions,
+    get_card_definition,
+)
 
 messages_bp = Blueprint("messages", __name__)
 
@@ -117,12 +125,18 @@ def conversation(username):
             "unread_count": 0
         })
 
+    user_duplicates = get_user_duplicates(current_user.id)
+    all_cards = get_all_card_definitions()
+
     return render_template(
         "messages.html",
         conversations=conversations,
         active_partner=target_user,
         messages=chat_messages,
-        active_game=active_game
+        active_game=active_game,
+        user_duplicates=user_duplicates,
+        all_cards=all_cards,
+        get_card_definition=get_card_definition,
     )
 
 
@@ -195,3 +209,69 @@ def unread_count():
         is_read=False
     ).count()
     return jsonify({"unread_count": count})
+
+
+# propose card trade to homie (:
+@messages_bp.route("/messages/trade/propose", methods=["POST"])
+@login_required
+def trade_propose():
+    recipient_id = request.form.get("recipient_id", type=int)
+    offered_card_key = request.form.get("offered_card_key", "").strip()
+    requested_card_key = request.form.get("requested_card_key", "").strip() or None
+    note = request.form.get("note", "").strip() or None
+
+    recipient = db.session.get(User, recipient_id) if recipient_id else None
+    if not recipient or recipient.id == current_user.id:
+        flash("Invalid recipient for trade proposal.", "error")
+        return redirect(url_for("messages.inbox"))
+
+    success, msg, _ = propose_trade(
+        sender_id=current_user.id,
+        receiver_id=recipient.id,
+        offered_card_key=offered_card_key,
+        requested_card_key=requested_card_key,
+        note=note,
+    )
+
+    if success:
+        flash(f"[TRADE PROPOSAL] {msg}", "success")
+    else:
+        flash(f"[TRADE ERROR] {msg}", "error")
+
+    return redirect(url_for("messages.conversation", username=recipient.username))
+
+
+# accept homie trade (:
+@messages_bp.route("/messages/trade/<int:trade_id>/accept", methods=["POST"])
+@login_required
+def trade_accept(trade_id):
+    success, msg = execute_trade_action(trade_id, current_user.id, action="accept")
+    if success:
+        flash(f"[TRADE SUCCESS] {msg}", "success")
+    else:
+        flash(f"[TRADE ERROR] {msg}", "error")
+    return redirect(request.referrer or url_for("messages.inbox"))
+
+
+# decline trade (:
+@messages_bp.route("/messages/trade/<int:trade_id>/decline", methods=["POST"])
+@login_required
+def trade_decline(trade_id):
+    success, msg = execute_trade_action(trade_id, current_user.id, action="decline")
+    if success:
+        flash(f"[TRADE] {msg}", "info")
+    else:
+        flash(f"[TRADE ERROR] {msg}", "error")
+    return redirect(request.referrer or url_for("messages.inbox"))
+
+
+# cancel pending trade offer (:
+@messages_bp.route("/messages/trade/<int:trade_id>/cancel", methods=["POST"])
+@login_required
+def trade_cancel(trade_id):
+    success, msg = execute_trade_action(trade_id, current_user.id, action="cancel")
+    if success:
+        flash(f"[TRADE] {msg}", "info")
+    else:
+        flash(f"[TRADE ERROR] {msg}", "error")
+    return redirect(request.referrer or url_for("messages.inbox"))

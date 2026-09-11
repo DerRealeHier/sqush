@@ -1,5 +1,5 @@
 import os
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 from extensions import db
@@ -14,6 +14,7 @@ from services.badge_service import (
     set_featured_badge,
     get_all_badges,
 )
+from services.card_service import award_card_to_user
 import config
 
 social_bp = Blueprint("social", __name__)
@@ -97,8 +98,13 @@ def rate_game(game_id):
         # before it compared a String with an Int so it was always false.
         new_review = Review(user_id=current_user.id, game_id=game_id, is_positive=(rating == "1"),
                             comment=comment)
-
         db.session.add(new_review)
+        # loot drop for new review (:
+        try:
+            drop = award_card_to_user(current_user.id, source="review")
+            session["recent_loot_drop"] = drop
+        except Exception as e:
+            print(f"DEBUG: Loot drop error on review: {e}")
 
     db.session.commit()
     sync_user_badges(current_user)
@@ -330,6 +336,10 @@ def profile(username):
     featured_badge = get_featured_badge(target_user)
     all_badges = get_all_badges()
 
+    from services.card_service import get_user_inventory, get_all_card_definitions
+    user_cards = get_user_inventory(target_user.id)
+    total_catalog_count = len(get_all_card_definitions())
+
     return render_template(
         "profile.html",
         user=target_user,
@@ -338,6 +348,8 @@ def profile(username):
         badges=badges,
         featured_badge=featured_badge,
         all_badges=all_badges,
+        user_cards=user_cards,
+        total_catalog_count=total_catalog_count,
     )
 
 

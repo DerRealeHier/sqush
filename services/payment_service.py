@@ -9,6 +9,7 @@ from models.bundle import Bundle
 from services.game_service import calculate_display_price, update_daily_stats
 from services.mail_service import send_email, _comic_email_shell
 from services.badge_service import sync_user_badges
+from services.card_service import award_card_to_user
 import config
 
 
@@ -322,6 +323,13 @@ def fulfill_checkout(checkout_session_id):
                 update_daily_stats(game)
         db.session.commit()
         sync_user_badges(user)
+        try:
+            drop = award_card_to_user(user.id, source="purchase")
+            if has_request_context():
+                from flask import session
+                session["recent_loot_drop"] = drop
+        except Exception as e:
+            print(f"DEBUG: Loot drop error on bundle purchase: {e}")
         return True
 
     # When its a single game
@@ -385,6 +393,13 @@ def fulfill_checkout(checkout_session_id):
         db.session.commit()
         update_daily_stats(game)
         sync_user_badges(user)
+        try:
+            drop = award_card_to_user(user.id, source="purchase")
+            if has_request_context():
+                from flask import session
+                session["recent_loot_drop"] = drop
+        except Exception as e:
+            print(f"DEBUG: Loot drop error on game purchase: {e}")
         return True
 
     # When its a cart (multiple individual games in one session)
@@ -432,6 +447,13 @@ def fulfill_checkout(checkout_session_id):
                 update_daily_stats(game)
         db.session.commit()
         sync_user_badges(user)
+        try:
+            drop = award_card_to_user(user.id, source="purchase")
+            if has_request_context():
+                from flask import session
+                session["recent_loot_drop"] = drop
+        except Exception as e:
+            print(f"DEBUG: Loot drop error on cart purchase: {e}")
         return True
 
     return False

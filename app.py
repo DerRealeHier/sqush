@@ -31,6 +31,8 @@ from models import (
     Tip,
     UserBadge,
     DirectMessage,
+    UserCard,
+    CardTrade,
     RoadmapItem,
     RoadmapVote,
     RoadmapComment,
@@ -321,6 +323,11 @@ with app.app_context():
                 db.session.execute(text("ALTER TABLE tip ADD COLUMN stripe_transfer_id VARCHAR(255)"))
             if "payout_status" not in t_cols:
                 db.session.execute(text("ALTER TABLE tip ADD COLUMN payout_status VARCHAR(50) DEFAULT 'pending'"))
+
+        if "direct_message" in table_names:
+            dm_cols = [c["name"] for c in inspector.get_columns("direct_message")]
+            if "trade_id" not in dm_cols:
+                db.session.execute(text("ALTER TABLE direct_message ADD COLUMN trade_id INTEGER REFERENCES card_trade(id)"))
         db.session.commit()
 
         indexes = [
@@ -352,6 +359,11 @@ with app.app_context():
                 ("idx_roadmap_vote_item", "roadmap_vote", "item_id"),
                 ("idx_roadmap_vote_user", "roadmap_vote", "user_id"),
                 ("idx_roadmap_comment_item", "roadmap_comment", "item_id"),
+                ("idx_user_card_user", "user_card", "user_id"),
+                ("idx_user_card_key", "user_card", "card_key"),
+                ("idx_card_trade_sender", "card_trade", "sender_id"),
+                ("idx_card_trade_receiver", "card_trade", "receiver_id"),
+                ("idx_card_trade_status", "card_trade", "status"),
         ]
         for idx_name, tbl, col in indexes:
             try:

@@ -36,8 +36,22 @@
         <h1 class="text-warning display-3">SUCCESS!</h1>
         <p class="fs-4"> You've bought your entire cart! Enjoy your new games! </p>
         <p class="text-light">In 10 seconds you'll automatically get to your library </p>
+        <div class="p-3 my-3 text-start mx-auto" style="max-width: 480px; background: #ffe14d; color: #000; border: 3px solid #000; box-shadow: 4px 4px 0 #fff;">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-collection-fill fs-2"></i>
+                <div>
+                    <strong class="d-block" style="font-size: 1.15rem;">[POW! LOOT DROP UNLOCKED]</strong>
+                    <span style="font-size: 0.9rem;">A random comic collectible card dropped into your binder from this order!</span>
+                </div>
+            </div>
+            <div class="text-end mt-2">
+                <a href="{{ url_for('inventory.index') }}" class="btn btn-dark btn-sm fw-bold">OPEN INVENTORY &rarr;</a>
+            </div>
+        </div>
+
         <div class="mt-4">
         <a href="{{ url_for('library') }}" class="btn btn-success btn-comic btn-lg">TO LIBRARY</a>
+        <a href="{{ url_for('inventory.index') }}" class="btn btn-warning btn-comic btn-lg text-dark ms-2">INVENTORY</a>
         </div>
     </div>
 </div>

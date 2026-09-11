@@ -81,6 +81,11 @@
                 {% endif %}
             </a>
 
+            <!-- Inventory Icon Button -->
+            <a href="{{ url_for('inventory.index') }}" class="hud-icon-btn" title="Comic Inventory">
+                <i class="bi bi-collection-fill"></i>
+            </a>
+
             <!-- Settings Icon Button -->
             <a href="{{ url_for('settings') }}" class="hud-icon-btn" title="Settings">
                 <i class="bi bi-gear-fill"></i>
@@ -115,6 +120,7 @@
             {% if current_user.is_authenticated %}
             <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('profile', username=current_user.username) }}"><i class="bi bi-person-circle"></i> My profile</a></li>
             <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('messages.inbox') }}"><i class="bi bi-chat-dots-fill"></i> Messages</a></li>
+            <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('inventory.index') }}"><i class="bi bi-collection-fill"></i> Card Inventory</a></li>
             <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('wishlist') }}"><i class="bi bi-heart-fill"></i> My Wishlist</a></li>
             <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('updates_feed') }}"><i class="bi bi-megaphone-fill"></i> Game Updates</a></li>
             <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('settings') }}"><i class="bi bi-gear-fill"></i> Settings</a></li>
