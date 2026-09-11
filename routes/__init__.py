@@ -9,6 +9,7 @@ from routes.developer import developer_bp
 from routes.messages import messages_bp
 from routes.roadmap import roadmap_bp
 from routes.inventory import inventory_bp
+from routes.ban_log import ban_log_bp
 
 
 def register_blueprints(app):
@@ -22,6 +23,7 @@ def register_blueprints(app):
     app.register_blueprint(messages_bp)
     app.register_blueprint(roadmap_bp)
     app.register_blueprint(inventory_bp)
+    app.register_blueprint(ban_log_bp)
 
     # aliases so old links and js don't cry xD
     for rule in list(app.url_map.iter_rules()):

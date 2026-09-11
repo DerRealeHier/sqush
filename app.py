@@ -36,6 +36,8 @@ from models import (
     RoadmapItem,
     RoadmapVote,
     RoadmapComment,
+    UserBan,
+    ModerationScanState,
 )
 from services import (
     connected_login_methods_count,
@@ -68,6 +70,8 @@ from services import (
     fulfill_gift,
     get_featured_badge,
     get_user_badges,
+    is_user_banned,
+    start_background_moderation,
 )
 from routes import register_blueprints
 
@@ -115,6 +119,31 @@ def create_app(config_override=None):
     limiter.init_app(app)
     #Yea I need that
     migrate.init_app(app, db)
+
+    # immediate logout if user got banned (:
+    @app.before_request
+    def check_user_ban_status():
+        if (
+            request.path.startswith("/static/")
+            or request.path.startswith("/bans")
+            or request.endpoint in ("ban_log.index", "ban_log.public_ban_log", "login", "logout")
+        ):
+            return None
+        if current_user.is_authenticated:
+            ban = is_user_banned(current_user)
+            if ban:
+                from flask_login import logout_user
+                logout_user()
+                session.clear()
+                if ban.ban_type == "permanent":
+                    flash(f"Your account has been permanently banned ({ban.reason}).", "error")
+                else:
+                    exp_str = ban.expires_at.strftime('%b %d, %Y') if ban.expires_at else "30 days"
+                    flash(f"Your account is banned until {exp_str} ({ban.reason}).", "error")
+                resp = redirect(url_for("ban_log.index"))
+                remember_cookie = app.config.get("REMEMBER_COOKIE_NAME", "remember_token")
+                resp.delete_cookie(remember_cookie)
+                return resp
 
     # browser headers so nobody embeds us in shady iframes or messes with mime types (:
     @app.after_request
@@ -328,6 +357,11 @@ with app.app_context():
             dm_cols = [c["name"] for c in inspector.get_columns("direct_message")]
             if "trade_id" not in dm_cols:
                 db.session.execute(text("ALTER TABLE direct_message ADD COLUMN trade_id INTEGER REFERENCES card_trade(id)"))
+
+        if "review" in table_names:
+            rev_cols = [c["name"] for c in inspector.get_columns("review")]
+            if "created_at" not in rev_cols:
+                db.session.execute(text("ALTER TABLE review ADD COLUMN created_at DATETIME"))
         db.session.commit()
 
         indexes = [
@@ -364,6 +398,9 @@ with app.app_context():
                 ("idx_card_trade_sender", "card_trade", "sender_id"),
                 ("idx_card_trade_receiver", "card_trade", "receiver_id"),
                 ("idx_card_trade_status", "card_trade", "status"),
+                ("idx_user_ban_user", "user_ban", "user_id"),
+                ("idx_user_ban_email", "user_ban", "email"),
+                ("idx_user_ban_active", "user_ban", "is_active"),
         ]
         for idx_name, tbl, col in indexes:
             try:
@@ -374,6 +411,13 @@ with app.app_context():
         db.session.commit()
     except Exception as e:
         print(f"DEBUG: SQLite column check notice: {e}")
+
+    # Kick off AI moderation background worker every 10 minutes
+    if config.AI_MODERATION_ENABLED and (not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true"):
+        try:
+            start_background_moderation(app, interval_seconds=config.GROQ_MODERATION_INTERVAL_SECONDS)
+        except Exception as e:
+            print(f"DEBUG: Could not start moderation scheduler: {e}")
 
 
 if __name__ == "__main__":

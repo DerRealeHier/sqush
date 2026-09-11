@@ -16,9 +16,12 @@ from models.bundle import Bundle, BundleGame, BundleCollaborator
 from models.collection import Collection, CollectionGame
 from models.message import DirectMessage
 from models.card import UserCard, CardTrade
+from models.ban import UserBan, ModerationScanState
 from models.roadmap import RoadmapItem, RoadmapVote, RoadmapComment
 
 __all__ = [
+    "UserBan",
+    "ModerationScanState",
     "Friendship",
     "User",
     "Notification",

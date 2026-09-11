@@ -59,8 +59,24 @@ from services.card_service import (
     propose_trade,
     execute_trade_action,
 )
+from services.moderation_service import (
+    call_groq_moderation,
+    is_email_banned,
+    is_user_banned,
+    execute_ban,
+    unban_user,
+    run_moderation_scan,
+    start_background_moderation,
+)
 
 __all__ = [
+    "call_groq_moderation",
+    "is_email_banned",
+    "is_user_banned",
+    "execute_ban",
+    "unban_user",
+    "run_moderation_scan",
+    "start_background_moderation",
     "connected_login_methods_count",
     "bundle_role",
     "load_user",

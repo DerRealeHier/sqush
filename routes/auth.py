@@ -17,6 +17,7 @@ from services.mail_service import send_verification_email, send_email_change_ver
 from services.cart_service import _merge_guest_cart
 from services.auth_service import connected_login_methods_count
 from services.badge_service import sync_user_badges
+from services.moderation_service import is_email_banned, is_user_banned
 import config
 
 auth_bp = Blueprint("auth", __name__)
@@ -33,6 +34,16 @@ def register():
         role = request.form["role"]
         # checkbox is checked by default in the template.
         require_email_confirmation = "email_confirmation" in request.form
+
+        # banned emails can't make new accounts xD
+        email_ban = is_email_banned(email)
+        if email_ban:
+            if email_ban.ban_type == "permanent":
+                flash(f"This email address is permanently banned ({email_ban.reason}).", "error")
+            else:
+                exp_str = email_ban.expires_at.strftime('%b %d, %Y') if email_ban.expires_at else "30 days"
+                flash(f"This email address is banned until {exp_str} ({email_ban.reason}).", "error")
+            return redirect(url_for("register"))
 
         if User.query.filter_by(username=username).first() or User.query.filter_by(email=email).first():
             flash("Username or Email exists! Be faster next time xD", "error")
@@ -66,6 +77,16 @@ def login():
         user = User.query.filter_by(username=username).first()
         if not user or not user.check_password(password):
             flash("Invalid username or password", "error")
+            return redirect(url_for("login"))
+
+        # kick out banned accounts right at the front door
+        user_ban = is_user_banned(user) or is_email_banned(user.email)
+        if user_ban:
+            if user_ban.ban_type == "permanent":
+                flash(f"Your account is permanently banned ({user_ban.reason}).", "error")
+            else:
+                exp_str = user_ban.expires_at.strftime('%b %d, %Y') if user_ban.expires_at else "30 days"
+                flash(f"Your account is banned until {exp_str} ({user_ban.reason}).", "error")
             return redirect(url_for("login"))
 
         if not user.email_verified:
@@ -202,6 +223,11 @@ def hackclub_callback():
         flash("Hack Club login failed: no email address was returned.", "error")
         return redirect(fail_redirect)
 
+    email_ban = is_email_banned(email)
+    if email_ban:
+        flash(f"This email address is banned ({email_ban.reason}).", "error")
+        return redirect(url_for("login"))
+
     # link mode: slap hack club onto the logged in user (:
     if link_user_id:
         target_user = db.session.get(User, link_user_id)
@@ -222,8 +248,13 @@ def hackclub_callback():
         flash("Hack Club account linked!", "success")
         return redirect(url_for("settings"))
 
-    # normal mode: login or make a brand new account xD
+    # normal mode: login or make a brand new account
     user = User.query.filter_by(email=email).first()
+    if user:
+        user_ban = is_user_banned(user)
+        if user_ban:
+            flash(f"Your account is banned ({user_ban.reason}).", "error")
+            return redirect(url_for("login"))
 
     if not user:
         username_source = email.split("@", 1)[0]
@@ -360,6 +391,12 @@ def verify_2fa():
         db.session.delete(otp)
         db.session.commit()
         session.pop("pending_2fa_user_id", None)
+
+        user_ban = is_user_banned(user) or is_email_banned(user.email)
+        if user_ban:
+            flash(f"Your account is banned ({user_ban.reason}).", "error")
+            return redirect(url_for("login"))
+
         login_user(user, remember=True)
         _merge_guest_cart(user)
 
@@ -409,6 +446,10 @@ def google_login():
     if not email:
         return jsonify({"error": "Google account has no email"}), 400
 
+    email_ban = is_email_banned(email)
+    if email_ban:
+        return jsonify({"error": f"This email address is banned: {email_ban.reason}."}), 403
+
     # link mode: slap google onto the logged in user (:
     if link_mode:
         if not current_user.is_authenticated:
@@ -424,10 +465,15 @@ def google_login():
         db.session.commit()
         return jsonify({"status": "ok", "redirect": url_for("settings")})
 
-    # normal mode: login or make a brand new account xD
+    # normal mode: login or make a brand new account
     user = User.query.filter_by(firebase_uid=uid).first()
     if not user:
         user = User.query.filter_by(email=email).first()
+
+    if user:
+        user_ban = is_user_banned(user)
+        if user_ban:
+            return jsonify({"error": f"Your account is banned: {user_ban.reason}."}), 403
 
     if not user:
         # brand new account, Google already vouches for the mail so no verification step needed
