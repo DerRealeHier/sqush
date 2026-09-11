@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BAN LOG &amp; WALL OF SHAME | Sqush</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/style.css') }}">
+    <style>
+        .ban-hero {
+            background-color: var(--yellow, #ffe14d);
+            background-image: radial-gradient(rgba(0,0,0,0.07) 15%, transparent 16%);
+            background-size: 14px 14px;
+            border: 4px solid #000;
+            box-shadow: 8px 8px 0 #000;
+            padding: 28px;
+            margin-bottom: 30px;
+            color: #000;
+        }
+        .ban-hero h1 {
+            color: #000 !important;
+            text-shadow: none !important;
+        }
+        .ban-hero p {
+            color: #111 !important;
+        }
+        .stat-badge {
+            background: #fff;
+            color: #000;
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0 #000;
+            padding: 16px 20px;
+            font-family: 'Bangers', sans-serif;
+            letter-spacing: 1px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .stat-badge:hover {
+            transform: translateY(-3px);
+            box-shadow: 6px 6px 0 #000;
+        }
+        .stat-badge-label {
+            color: #4b5563;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+        .stat-badge-value {
+            color: #000;
+            font-size: 2.2rem;
+            line-height: 1.1;
+            display: block;
+        }
+        .filter-chip {
+            font-family: 'Bangers', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+            border: 3px solid #000;
+            background: #fff;
+            color: #000;
+            padding: 6px 16px;
+            cursor: pointer;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            box-shadow: 3px 3px 0 #000;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.15s ease;
+        }
+        .filter-chip.active, .filter-chip:hover {
+            background: #000;
+            color: #ffe14d;
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0 #000;
+        }
+        .ban-card {
+            border: 4px solid #000;
+            box-shadow: 6px 6px 0 #000;
+            background: #fff;
+            color: #111;
+            padding: 24px;
+            margin-bottom: 22px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .ban-card:hover {
+            transform: translate(-3px, -3px);
+            box-shadow: 10px 10px 0 #000;
+        }
+        .ban-badge-perm {
+            background: #dc2626;
+            color: #fff;
+            font-family: 'Bangers', sans-serif;
+            letter-spacing: 1px;
+            font-size: 1.05rem;
+            border: 2px solid #000;
+            box-shadow: 2px 2px 0 #000;
+            padding: 4px 12px;
+            display: inline-block;
+        }
+        .ban-badge-temp {
+            background: #f59e0b;
+            color: #000;
+            font-family: 'Bangers', sans-serif;
+            letter-spacing: 1px;
+            font-size: 1.05rem;
+            border: 2px solid #000;
+            box-shadow: 2px 2px 0 #000;
+            padding: 4px 12px;
+            display: inline-block;
+        }
+        .ban-reason-box {
+            background: #f8fafc;
+            border: 2px solid #000;
+            box-shadow: 3px 3px 0 #e2e8f0;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-top: 12px;
+            font-family: 'Comic Neue', cursive;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .admin-box {
+            border: 4px solid #000;
+            box-shadow: 6px 6px 0 #000;
+            background: #fef08a;
+            color: #000;
+            padding: 24px;
+            margin-bottom: 28px;
+        }
+        .dev-box {
+            border: 4px solid #000;
+            box-shadow: 6px 6px 0 #000;
+            background: #e0f2fe;
+            color: #000;
+            padding: 22px 26px;
+            margin-bottom: 28px;
+        }
+        .comic-input {
+            border: 3px solid #000 !important;
+            box-shadow: 3px 3px 0 #000 !important;
+            border-radius: 0 !important;
+            font-family: 'Comic Neue', cursive;
+            font-weight: 700;
+        }
+        .comic-input:focus {
+            outline: none;
+            box-shadow: 5px 5px 0 #000 !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="BackgroundImage py-4 bg-image-wrap">
+    <div class="container-fluid d-flex justify-content-end px-4">
+        <div class="user-hud d-flex align-items-center gap-2">
+            {% if current_user.is_authenticated %}
+            <!-- Messages Icon -->
+            <a href="{{ url_for('messages.inbox') }}" class="hud-icon-btn position-relative" title="Messages">
+                <i class="bi bi-chat-dots-fill"></i>
+                {% if unread_messages_count > 0 %}
+                <span class="hud-count-badge">{{ unread_messages_count }}</span>
+                {% endif %}
+            </a>
+
+            <!-- Cart -->
+            <a href="/cart" class="hud-icon-btn position-relative" title="Cart">
+                <i class="bi bi-cart-fill"></i>
+                <span class="hud-count-badge cart-count-badge {% if cart_count == 0 %}d-none{% endif %}">{{ cart_count }}</span>
+            </a>
+
+            <!-- Settings -->
+            <a href="{{ url_for('settings') }}" class="hud-icon-btn" title="Settings">
+                <i class="bi bi-gear-fill"></i>
+            </a>
+
+            <div class="d-flex align-items-center gap-2 ms-1">
+                <img src="{{ url_for('static', filename=current_user.profile_image) }}" class="hud-avatar" alt="{{ current_user.username }}">
+                <div class="d-flex flex-column">
+                    <a href="{{ url_for('profile', username=current_user.username) }}" class="hud-username text-decoration-none text-dark fw-bold">
+                        {{ current_user.username }}
+                    </a>
+                    <span class="hud-role">{{ current_user.role }}</span>
+                </div>
+                <a href="/logout" class="hud-btn-bye btn btn-sm btn-danger">BYE!</a>
+            </div>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-warning btn-comic text-dark fw-bold">LOGIN</a>
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-comic text-white fw-bold">REGISTER</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <div class="dropdown my-3">
+        <button class="btn dropdown-toggle fs-1 comic-dropdown-btn border-0" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+            Sqush
+        </button>
+        <ul class="dropdown-menu text-center comic-dropdown-menu" aria-labelledby="dropdownMenuButton">
+            {% if current_user.is_authenticated %}
+            <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('profile', username=current_user.username) }}"><i class="bi bi-person-circle"></i> My profile</a></li>
+            <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('messages.inbox') }}"><i class="bi bi-chat-dots-fill"></i> Messages</a></li>
+            <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('inventory.index') }}"><i class="bi bi-collection-fill"></i> Card Inventory</a></li>
+            <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('library') }}"><i class="bi bi-collection-play-fill"></i> Library</a></li>
+            <li><a class="dropdown-item comic-dropdown-item" href="{{ url_for('settings') }}"><i class="bi bi-gear-fill"></i> Settings</a></li>
+            {% endif %}
+            <li><a class="dropdown-item comic-dropdown-item active" href="{{ url_for('ban_log.index') }}"><i class="bi bi-shield-slash-fill text-danger"></i> Ban Log</a></li>
+        </ul>
+    </div>
+
+    <nav class="navbar d-flex flex-column align-items-center justify-content-center mx-auto mb-4">
+        <div class="navbarContent d-flex justify-content-center align-items-center flex-wrap gap-3 m-0 w-100">
+            <a class="NavBar" href="/">Home</a>
+            <a class="NavBar" href="/store">Store</a>
+            <a class="NavBar" href="/community">COMMUNITY</a>
+            <a class="NavBar" href="{{ url_for('library') }}">LIBRARY</a>
+        </div>
+    </nav>
+</div>
+
+<div class="container py-4">
+
+    <!-- Community Sub Navigation Toggle -->
+    <div class="d-flex justify-content-center gap-3 mb-4">
+        <a href="/community" class="btn comic-btn-store px-4 py-2 text-decoration-none fw-bold" style="font-size: 1.05rem; font-family:'Bangers',sans-serif; letter-spacing:0.5px;">
+            COMMUNITY USERS
+        </a>
+        <a href="{{ url_for('ban_log.index') }}" class="btn btn-danger px-4 py-2 text-decoration-none fw-bold" style="font-size: 1.05rem; font-family:'Bangers',sans-serif; letter-spacing:0.5px; border: 3px solid #000; box-shadow: 4px 4px 0px #000;">
+            PUBLIC BAN LOG
+        </a>
+    </div>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="mb-4">
+        {% for category, message in messages %}
+        <div class="comic-frame mb-3 py-3 px-4 fw-bold d-flex align-items-center gap-3 fs-5"
+             style="background:{% if category=='error' %}var(--red,#ff3b30); color:#fff;{% elif category=='info' %}var(--blue,#3aa0ff); color:#fff;{% else %}var(--green,#33d17a); color:#000;{% endif %}; border: 3px solid #000; box-shadow: 6px 6px 0 #000;">
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Ban Hero Banner: Uses Full Space with No Void -->
+    <div class="ban-hero">
+        <div class="mb-4">
+            <div class="badge bg-danger text-white px-3 py-1 text-uppercase fw-bold mb-2" style="font-family:'Bangers',sans-serif; letter-spacing:1px; border:2px solid #000; box-shadow:2px 2px 0 #000; font-size: 0.95rem;">
+                OFFICIAL DISCIPLINARY LOG
+            </div>
+            <h1 class="display-4 mb-2 fw-black text-dark" style="font-family:'Bangers',sans-serif; letter-spacing:1.5px;">
+                SQUISH BAN LOG &amp; WALL OF SHAME
+            </h1>
+            <p class="mb-0 fw-bold" style="font-family:'Comic Neue',cursive; font-size:1.15rem; line-height: 1.5;">
+                Transparency is key.  Automated detection powered by AI and platform administrators.
+            </p>
+        </div>
+
+        <!-- Stat Cards Spanning the Entire Width -->
+        <div class="row g-3">
+            <div class="col-6 col-md-3">
+                <div class="stat-badge text-center w-100" style="background:#fff;">
+                    <span class="stat-badge-label d-block">TOTAL</span>
+                    <span class="stat-badge-value">{{ total_bans }}</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-badge text-center w-100" style="background:#fee2e2;">
+                    <span class="stat-badge-label d-block text-danger">ACTIVE BANS</span>
+                    <span class="stat-badge-value text-danger">{{ active_bans }}</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-badge text-center w-100" style="background:#fee2e2;">
+                    <span class="stat-badge-label d-block text-danger">PERMABAN</span>
+                    <span class="stat-badge-value text-danger">{{ permanent_bans }}</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-badge text-center w-100" style="background:#fef3c7;">
+                    <span class="stat-badge-label d-block text-warning-emphasis">30 DAY TIMEOUT</span>
+                    <span class="stat-badge-value text-warning-emphasis">{{ temporary_bans }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin & Developer Panels -->
+    {% if current_user.is_authenticated and current_user.role == 'admin' %}
+    <!-- Admin Control Panel (AI Scan + Manual Banning Authority) -->
+    <div class="admin-box mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3 border-bottom border-dark pb-3">
+            <div>
+                <span class="badge bg-dark text-warning border border-dark fw-bold mb-1" style="font-family:'Bangers',sans-serif; letter-spacing:0.5px; font-size:0.85rem;">
+                    ADMIN OVERSEER
+                </span>
+                <h4 class="mb-0" style="font-family:'Bangers',sans-serif; letter-spacing:1px; font-size: 1.45rem;">
+                    ADMIN CONTROL PANEL
+                </h4>
+            </div>
+            <form action="{{ url_for('ban_log.trigger_scan') }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-dark btn-comic text-white px-3 py-2 fw-bold" style="font-family:'Bangers',sans-serif; letter-spacing:1px; border:3px solid #000; box-shadow:3px 3px 0 #000;">
+                    RUN AI SCAN NOW
+                </button>
+            </form>
+        </div>
+
+        <p class="small fw-bold mb-3" style="font-family:'Comic Neue',cursive; color: #1e293b;">
+            Admins have full authority to manually ban users or launch the AI llama 3.3 70b scanner across community content.
+        </p>
+
+        <!-- Manual Ban Form: ONLY FOR ADMINS -->
+        <form action="{{ url_for('ban_log.admin_manual_ban') }}" method="POST" class="row g-2 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label fw-bold small text-uppercase">USER OR EMAIL</label>
+                <input type="text" name="identifier" class="form-control comic-input" placeholder="Gamer123 or email@..." required>
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label fw-bold small text-uppercase">SEVERITY</label>
+                <select name="severity" class="form-select comic-input">
+                    <option value="minor">30 Day Timeout (Minor)</option>
+                    <option value="severe">Permaban Forever (Severe)</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label fw-bold small text-uppercase">CATEGORY</label>
+                <select name="offense_category" class="form-select comic-input">
+                    <option value="hate_speech_slur">Racial Slurs / Hate Speech (Instant Permaban)</option>
+                    <option value="personal_info_leak">Doxxing / Leaking Real Names (30 Days)</option>
+                    <option value="custom">Other Community Violations</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label fw-bold small text-uppercase">PUBLIC REASON</label>
+                <input type="text" name="reason" class="form-control comic-input" placeholder="e.g. Hate speech or doxxing in review">
+            </div>
+            <div class="col-12 col-md-1">
+                <button type="submit" class="btn btn-danger btn-comic text-white w-100 fw-bold" style="font-family:'Bangers',sans-serif; border:3px solid #000; box-shadow:3px 3px 0 #000; font-size:1.1rem;">
+                    BAN
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {% elif current_user.is_authenticated and current_user.role == 'dev' %}
+    <!-- Developer AI Control Panel (AI SCAN ONLY - NO BANNING ALLOWED!) -->
+    <div class="dev-box mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <span class="badge bg-dark text-info border border-dark fw-bold mb-1" style="font-family:'Bangers',sans-serif; letter-spacing:0.5px; font-size:0.85rem;">
+                    DEVELOPER WORKBENCH
+                </span>
+                <h4 class="mb-1" style="font-family:'Bangers',sans-serif; letter-spacing:1px; color:#000; font-size: 1.4rem;">
+                    AI MODERATION RADAR (SCAN ONLY)
+                </h4>
+                <p class="small fw-bold mb-0" style="font-family:'Comic Neue',cursive; color:#1e293b;">
+                    Developers can run automated AI moderation scans. Manual user bans are strictly reserved for Administrators.
+                </p>
+            </div>
+            <form action="{{ url_for('ban_log.trigger_scan') }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-dark btn-comic text-white px-4 py-2 fw-bold" style="font-family:'Bangers',sans-serif; letter-spacing:1px; border:3px solid #000; box-shadow:3px 3px 0 #000;">
+                    RUN  AI SCAN NOW
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filter & Search Controls -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div class="d-flex flex-wrap align-items-center">
+            <span class="fw-bold me-2 text-white" style="font-family:'Bangers',sans-serif; font-size:1.25rem; letter-spacing:0.5px;">
+                FILTERS:
+            </span>
+            <a href="{{ url_for('ban_log.index', filter='all', q=search_q) }}" class="filter-chip {% if filter_mode=='all' %}active{% endif %}">ALL</a>
+            <a href="{{ url_for('ban_log.index', filter='active', q=search_q) }}" class="filter-chip {% if filter_mode=='active' %}active{% endif %}">CURRENTLY BANNED</a>
+            <a href="{{ url_for('ban_log.index', filter='permanent', q=search_q) }}" class="filter-chip {% if filter_mode=='permanent' %}active{% endif %}">PERMABAN</a>
+            <a href="{{ url_for('ban_log.index', filter='temporary', q=search_q) }}" class="filter-chip {% if filter_mode=='temporary' %}active{% endif %}">30 DAY TIMEOUT</a>
+        </div>
+        <form action="{{ url_for('ban_log.index') }}" method="GET" class="d-flex gap-2 align-items-center">
+            <input type="hidden" name="filter" value="{{ filter_mode }}">
+            <input type="text" name="q" value="{{ search_q }}" class="form-control form-control-sm comic-input" placeholder="Search bans or reasons..." style="min-width: 240px; height: 38px;">
+            <button type="submit" class="btn btn-dark btn-sm fw-bold px-3" style="border:3px solid #000; box-shadow:3px 3px 0 #000; font-family:'Bangers',sans-serif; height: 38px; font-size:1.05rem;">
+                SEARCH
+            </button>
+            {% if search_q %}
+            <a href="{{ url_for('ban_log.index', filter=filter_mode) }}" class="btn btn-danger btn-sm fw-bold px-3" style="border:3px solid #000; box-shadow:3px 3px 0 #000; font-family:'Bangers',sans-serif; height: 38px; display:flex; align-items:center;" title="Clear search">
+                CLEAR
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Ban List -->
+    {% if bans %}
+    <div class="row">
+        {% for b in bans %}
+        <div class="col-12">
+            <div class="ban-card" style="border-left: {% if b.ban_type=='permanent' %}8px solid #dc2626{% else %}8px solid #f59e0b{% endif %};">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                    <div class="d-flex align-items-start gap-3">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                <h3 class="mb-0 fw-bold" style="font-family:'Bangers',sans-serif; letter-spacing:1px; color:#000; font-size: 1.6rem;">
+                                    {{ b.username }}
+                                </h3>
+                                {% if b.ban_type == 'permanent' %}
+                                <span class="ban-badge-perm">PERMANENTLY BANNED</span>
+                                {% else %}
+                                <span class="ban-badge-temp">30 DAY TIMEOUT</span>
+                                {% endif %}
+
+                                {% if not b.is_currently_banned %}
+                                <span class="badge bg-secondary" style="border:2px solid #000; box-shadow:2px 2px 0 #000; font-family:'Bangers',sans-serif; font-size:0.95rem;">
+                                    PARDONED / EXPIRED
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Reason Callout Bubble -->
+                            <div class="ban-reason-box">
+                                <span>{{ b.reason }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-md-end mt-2 mt-md-0">
+                        <div class="small fw-bold text-muted">
+                            Caught on: {{ b.banned_at.strftime('%b %d, %Y %H:%M') }}
+                        </div>
+                        <div class="small fw-bold mt-1">
+                            {% if b.ban_type == 'permanent' %}
+                            <span class="text-danger">Duration: Permanent</span>
+                            {% elif b.expires_at %}
+                            <span class="text-warning-emphasis">Free again: {{ b.expires_at.strftime('%b %d, %Y %H:%M') }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="small text-muted mt-1 fw-bold">
+                            Banned by: {{ b.banned_by }}
+                        </div>
+
+                        <!-- ONLY ADMINS CAN UNBAN / PARDON (DEVS CANNOT!) -->
+                        {% if current_user.is_authenticated and current_user.role == 'admin' and b.is_currently_banned %}
+                        <form action="{{ url_for('ban_log.admin_unban', ban_id=b.id) }}" method="POST" class="d-inline mt-2">
+                            <button type="submit" class="btn btn-outline-dark btn-sm fw-bold mt-2" onclick="return confirm('Are you sure you want to pardon this user?');" style="border:2px solid #000; box-shadow:2px 2px 0 #000; font-family:'Bangers',sans-serif; font-size:0.95rem;">
+                                Pardon
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div class="d-flex justify-content-center gap-2 mt-4">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('ban_log.index', page=pagination.prev_num, filter=filter_mode, q=search_q) }}" class="filter-chip">
+            PREVIOUS
+        </a>
+        {% endif %}
+        <span class="filter-chip active">PAGE {{ pagination.page }} OF {{ pagination.pages }}</span>
+        {% if pagination.has_next %}
+        <a href="{{ url_for('ban_log.index', page=pagination.next_num, filter=filter_mode, q=search_q) }}" class="filter-chip">
+            NEXT
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Friendly Comic Empty State: No Clutter -->
+    <div class="comic-frame text-center py-5" style="background:#fff; color:#000; border:4px solid #000; box-shadow:8px 8px 0 #000;">
+        <h2 style="font-family:'Bangers',sans-serif; color:#000; font-size:2.4rem; letter-spacing:1px;" class="mb-2">
+            NO BANS FOUND
+        </h2>
+        <p class="text-secondary fw-bold mb-3" style="font-family:'Comic Neue',cursive; font-size:1.2rem;">
+            No users are currently banned under this filter.
+        </p>
+        {% if search_q or filter_mode != 'all' %}
+        <a href="{{ url_for('ban_log.index') }}" class="btn btn-dark btn-comic fw-bold px-4 py-2" style="font-family:'Bangers',sans-serif; border:3px solid #000; box-shadow:3px 3px 0 #000; font-size:1.1rem;">
+            SHOW ALL BANS
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Privacy & Safe Space Note -->
+    <div class="comic-frame mt-5 p-4" style="background:#111827; color:#fff; border:4px solid #000; box-shadow:8px 8px 0 #000;">
+        <h4 style="font-family:'Bangers',sans-serif; letter-spacing:1px; color:var(--yellow,#ffe14d);" class="mb-2">
+            PRIVACY &amp; SAFE SPACE GUARANTEE
+        </h4>
+        <p class="mb-0 fw-bold" style="font-family:'Comic Neue',cursive; color:#e2e8f0; line-height:1.6; font-size:1.05rem;">
+             Violations are summarized cleanly by an AI
+        </p>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
