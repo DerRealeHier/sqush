@@ -45,12 +45,34 @@ class User(UserMixin, db.Model):
                                lazy="dynamic")
     #linking more than just one game
     games = db.relationship("Game", backref="user", lazy=True)
+    bans = db.relationship("UserBan", foreign_keys="UserBan.user_id", backref="user", lazy=True, order_by="UserBan.banned_at.desc()")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    @property
+    def is_admin(self):
+        return self.role == "admin"
+
+    @property
+    def active_ban(self):
+        from models.ban import UserBan
+        email_clean = (self.email or "").strip().lower()
+        active_bans = UserBan.query.filter(
+            (UserBan.user_id == self.id) | (UserBan.email == email_clean),
+            UserBan.is_active == True
+        ).all()
+        for b in active_bans:
+            if b.is_currently_banned:
+                return b
+        return None
+
+    @property
+    def is_banned(self):
+        return self.active_ban is not None
 
     @property
     def recent_notifications(self):
