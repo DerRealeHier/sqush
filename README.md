@@ -85,39 +85,45 @@ Here is everything built into sqush that you can try out:
 
 ```
 sqush/
-├── app.py              
-├── config.py          
-├── extensions.py     
+├── app.py
+├── config.py
+├── extensions.py
 ├── models/
-│   ├── user.py        
-│   ├── game.py    
-│   ├── commerce.py     
-│   ├── bundle.py       
-│   ├── collection.py   
-│   ├── message.py     
-│   └── roadmap.py      
+│   ├── user.py
+│   ├── game.py
+│   ├── commerce.py
+│   ├── bundle.py
+│   ├── collection.py
+│   ├── message.py
+│   ├── roadmap.py
+│   ├── card.py
+│   └── ban.py
 ├── routes/
-│   ├── auth.py        
-│   ├── main.py       
-│   ├── cart.py          
-│   ├── checkout.py   
-│   ├── library.py     
-│   ├── social.py     
-│   ├── developer.py   
-│   ├── messages.py     
-│   └── roadmap.py      
+│   ├── auth.py
+│   ├── main.py
+│   ├── cart.py
+│   ├── checkout.py
+│   ├── library.py
+│   ├── social.py
+│   ├── developer.py
+│   ├── messages.py
+│   ├── roadmap.py
+│   ├── inventory.py
+│   └── ban_log.py
 ├── services/
-│   ├── auth_service.py   
-│   ├── badge_service.py  
-│   ├── cart_service.py   
-│   ├── file_service.py   
-│   ├── game_service.py   
-│   ├── mail_service.py   
+│   ├── auth_service.py
+│   ├── badge_service.py
+│   ├── card_service.py
+│   ├── cart_service.py
+│   ├── file_service.py
+│   ├── game_service.py
+│   ├── mail_service.py
+│   ├── moderation_service.py
 │   └── payment_service.py
-├── templates/          
-├── static/             
-├── tests/          
-└── migrations/         
+├── templates/
+├── static/
+├── tests/
+└── migrations/
 ```
 
 
