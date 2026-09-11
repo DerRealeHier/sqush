@@ -1,40 +1,79 @@
 # sqush
 
-**sqush** is an open source indie game store platform. Think itch.io, but with a better user experience and more fun to use. Developers can publish and sell their games, players can browse, buy, review, gift games and message each other or game developers, and everyone can connect socially.
+An indie game marketplace (oviuosly not from a big corp) where you can buy games, review them and even publish your own.
+
+![sqush](static/images/pixel_art.png)
+
+ **[live demo at sqush.dev](https://sqush.dev)**
+
+> **Demo  mode:** The live site is loaded with test games and runs in Stripe test mode. You don't need real money to try anything. Just grab the test card right from the footer (`4242 4242 4242 4242`, Exp `12/34`, CVC `123`) to buy games, test developer payouts, and unlock card drops. (pinky promise)
+
+---
+
+## Quick start
+
+The fastest way to try sqush is the live link above. If you want to run it on your own machine:
+
+```bash
+git clone https://github.com/DerRealeHier/sqush.git && cd sqush
+pip install -r requirements.txt
+python app.py
+```
+
+Open `http://localhost:5000` in your browser. The app starts right up with SQLite and comes pre seeded with 30+ demo games and cover art ready to test (3 of these test game seeds have handdrawn covers in paint, every other is done with a script that just adds the title random background color, a basic comic design and then its finished).
 
 ---
 
 ## Features
 
-| Category | Features                                                                                           |
-|---|----------------------------------------------------------------------------------------------------|
-| **Auth** | Email/password registration, email verification, OTP 2FA, Google login (Firebase), Hack Club OAuth |
-| **Store** | Browse games, dynamic tag & genre search filtering, featured/popular/recommended listings        |
-| **Game pages** | Screenshots, videos, reviews with upvotes, developer update posts with comments, unified action pills (Wishlist, Follow, Roadmap, Gift, Message Dev, Tip Dev), and dedicated Buy Box with demo downloads |
-| **Roadmaps** | Public interactive Kanban boards (Planned, In Progress, Done), community feature upvoting, bug reporting, drag-and-drop card status management for devs, and item discussion threads |
-| **Purchases** | Stripe checkout, automated developer payouts via Stripe Connect (90/10 split), multi-seller cart transfers, wishlists, game gifting, Tip Jar donations |
-| **Bundles** | Multi-game bundles with collaborator roles, bundle-specific pricing                                |
-| **Library** | Owned games, download game files, playtime tracking                                                |
-| **Social** | Friends, profile pages, profile comments, notifications, collections                               |
-| **Messaging** | Direct messaging (user-to-user & user-to-dev), conversation threads, game inquiries, unread badges  |
-| **Developer** | Dashboard, upload game files (ZIP/EXE), sales and tip analytics, Stripe Connect Express onboarding & payouts portal, retroactive backlog fulfillment, game stats, roadmap item management |
-| **Security** | Rate limiting, ClamAV malware scanning for uploaded files                                          |
-| **Badges** | User badge system with featured badge on profile (including Tip Jar Hero)                          |
+Here is everything built into sqush that you can try out:
+
+### Storefront and Game Pages
+- **Game Discovery:** Browse games with tag and genre filtering, search, and featured / popular / recommended sections.
+- **Dynamic Day/Night Theme:** Header banner automatically switches between custom day and night pixel artwork based on the user's local hour (with a manual HUD toggle switch).
+- **Rich Game Pages:** Screenshots, gameplay trailers/videos, user reviews with upvotes, developer devlog update posts with comment threads, and dedicated Buy Box with demo downloads.
+- **Quick Action Pills:** Wishlist, Follow, View Roadmap, Gift, Message Developer, and Tip Jar right from the game header.
+- **Multi-Game Bundles:** Multi-game bundles with custom bundle pricing and collaborator roles for multi-dev revenue sharing.
+
+### Purchases and Stripe Connect 
+- **Automated Developer Payouts:** Developers connect their Stripe account with Stripe Connect Express. On every game sale, 90% routes directly to the creator, while 10% is being kept as a platform fee.
+- **100% Tip Jar:** Players can tip creators directly with 0% platform fee.
+- **Multi Developer Cart Checkout:** Add games from multiple different developers to a single cart. The checkout automatically calculates the splits and issues individual transfers to each developer in the background.
+- **Retroactive Backlog Payouts:** If a developer sells games before completing their Stripe KYC onboarding, earnings are held as `pending` and automatically swept to their account the second they finish onboarding in `/dashboard/revenue`.
+- **Game Gifting and Wishlists:** Buy games as gifts with redeemable gift codes, send gifts directly, and keep track of games on your personal wishlist.
+
+### Public Interactive Roadmaps
+- **Public Kanban Boards:** Every game has an interactive board with Planned, In Progress, and Done columns.
+- **Community Feature Voting and Bug Reports:** Players upvote feature cards, submit bug reports, and can discuss roadmap items in dedicated card threads.
+- **Dev Status Management:** Developers can drag and drop or update card statuses in real time to keep players in the loop.
+
+### Collectible Trading Cards & Inventory
+- **Card Pack Drops:** Buying games or opening card packs drops digital trading cards across different rarity tiers (Common, Rare, Holographic, Secret) Sorry for the naming I played too much brainrot games.
+- **Inventory & Trading:** Inspect your card collection in your inventory and trade cards directly with friends through direct messages (including free gifts for homies).
+
+### Social and Messaging
+- **Direct Messaging:** Direct messaging between users and game developers.
+- **Profiles and Communities:** User profile pages with custom avatars, friend lists, profile wall comments and owned game collections.
+- **Profile Badges:** User badge system with customizable featured badges displayed on your profile.
+
+### Developer Dashboard and Infrastructure
+- **Developer Hub:** Developer dashboard to upload game builds (ZIP/EXE), edit game metadata, view live sales and tip analytics, and track game stats (I know crazy right?).
+- **Cloudflare R2 Storage:** Yeah I'm using that for hosting games. You don't need that. You can use other services for the database.
+- **Security & Malware Scanning:** Optional ClamAV antivirus scanning for game uploads, rate limiting via Flask Limiter, and Cloudflare Turnstile bot protection (A bit of over engineering, this Store cant even handle 1000 games. at least I think so=)
+- **Flexible Auth:** Email/password registration with email verification, OTP 2FA, Google login (Firebase), and Hack Club OAuth.
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Backend | Python 3, Flask 3 |
-| Database | SQLite (via SQLAlchemy 2 + Flask-Migrate / Alembic) |
-| Auth | Flask-Login, Firebase Admin SDK, itsdangerous (email tokens) |
-| Payments | Stripe |
-| Email | Flask-Mail (Gmail SMTP) |
-| Rate limiting | Flask-Limiter |
-| File scanning | ClamAV (optional) |
-| Frontend | Jinja2 templates, vanilla JS |
+- **Backend:** Python 3.11+, Flask 3, SQLAlchemy 2, Flask-Migrate (Alembic)
+- **Database:** SQLite (default/local) or PostgreSQL
+- **Payments:** Stripe and Stripe Connect Express
+- **File Storage:** Cloudflare R2 (S3 compatible) with local filesystem fallback. You don't need that you can use other services (But please don't)
+- **Auth:** Flask Login, Firebase Admin SDK (Google login), Hack Club OAuth.
+- **Email:** Flask Mail (SMTP / Resend API)
+- **Security:** Flask Limiter, Cloudflare Turnstile, ClamAV (optional)
+- **Frontend:** Jinja2 templates, vanilla JavaScript, custom retro CSS with pixel snapping
 
 ---
 
@@ -42,192 +81,133 @@
 
 ```
 sqush/
-├── app.py              # App factory & entry point
-├── config.py           # All config loaded from .env
-├── extensions.py       # Flask extension instances (db, login, mail, stripe, firebase, ...)
+├── app.py              
+├── config.py          
+├── extensions.py     
 ├── models/
-│   ├── user.py         # User, Friendship, Notification, ProfileComment, LoginOTP, UserBadge
-│   ├── game.py         # Game, Screenshot, Video, Review, ReviewVote, GameUpdate, GameStats, ...
-│   ├── commerce.py     # Purchase, Wishlist, CartItem, Gift, Tip
-│   ├── bundle.py       # Bundle, BundleGame, BundleCollaborator
-│   ├── collection.py   # Collection, CollectionGame
-│   ├── message.py      # DirectMessage (user-to-user & user-to-dev inquiries)
-│   └── roadmap.py      # RoadmapItem, RoadmapVote, RoadmapComment
+│   ├── user.py        
+│   ├── game.py    
+│   ├── commerce.py     
+│   ├── bundle.py       
+│   ├── collection.py   
+│   ├── message.py     
+│   └── roadmap.py      
 ├── routes/
-│   ├── auth.py         # Register, login, logout, OAuth (Google, Hack Club), 2FA
-│   ├── main.py         # Home, store, game detail pages
-│   ├── cart.py         # Cart management (guest & logged-in, multi-seller checkout)
-│   ├── checkout.py     # Stripe checkout, webhooks (account.updated, checkout.session.completed), gifting, Tip Jar
-│   ├── library.py      # User library, downloads
-│   ├── social.py       # Profiles, friends, collections, notifications
-│   ├── developer.py    # Developer dashboard, game upload/edit, analytics, revenue & Stripe Connect onboarding
-│   ├── messages.py     # Direct messaging, inbox, conversation threads, unread counters
-│   └── roadmap.py      # Public Kanban boards, feature voting, bug reporting, card discussions
+│   ├── auth.py        
+│   ├── main.py       
+│   ├── cart.py          
+│   ├── checkout.py   
+│   ├── library.py     
+│   ├── social.py     
+│   ├── developer.py   
+│   ├── messages.py     
+│   └── roadmap.py      
 ├── services/
-│   ├── auth_service.py   # load_user, login helpers
-│   ├── badge_service.py  # Badge award logic
-│   ├── cart_service.py   # Cart token & merge helpers
-│   ├── file_service.py   # File upload & ClamAV scan
-│   ├── game_service.py   # Recommendations, stats, tags, tip calculations
-│   ├── mail_service.py   # Transactional email templates
-│   └── payment_service.py# Stripe Connect engine, destination charges, multi-seller payouts & fulfillment
-├── templates/          # Jinja2 HTML templates (including game_roadmap.html, developer_revenue.html)
-├── static/             # CSS, JS, images, uploaded files
-├── tests/              # Automated test suites (test_roadmap.py, test_stripe_connect.py)
-└── migrations/         # Alembic database migrations
+│   ├── auth_service.py   
+│   ├── badge_service.py  
+│   ├── cart_service.py   
+│   ├── file_service.py   
+│   ├── game_service.py   
+│   ├── mail_service.py   
+│   └── payment_service.py
+├── templates/          
+├── static/             
+├── tests/          
+└── migrations/         
 ```
+
+
+If you somehow end up with the wrong project structure. (That shouldn't happen.) But better safe then sorry.
+Made with https://azad-sl.github.io/GitTree/
 
 ---
 
-## Local Setup
 
-### 1. Prerequisites
+## Running locally
 
+### What you need (Not a 5090.)
 - **Python 3.11+**
-- **pip** or a virtual environment manager
-- A **Stripe** account (test mode is fine)
-- A **Gmail** account with an [App Password](https://myaccount.google.com/apppasswords) for SMTP
-- *(Optional)* A **Firebase** project for Google login
-- *(Optional)* A **Hack Club** OAuth app for Hack Club login
-- *(Optional)* **ClamAV** daemon running locally for malware scanning
+- A free **Stripe** account (test mode is all you need)
+- *(Optional)* A Gmail account or Resend API key for sending emails
+- *(Optional)* Firebase / Hack Club credentials for OAuth
 
-### 2. Clone & create virtual environment
+### 1. Configure environment variables
+Copy the example environment file:
 
 ```bash
-git clone https://github.com/DerRealeHier/sqush.git
-cd sqush
-
-python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-
-# macOS / Linux
-source .venv/bin/activate
+cp .env.example .env
 ```
 
-### 3. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-> If there is no `requirements.txt` yet, generate one with:
-> ```bash
-> pip freeze > requirements.txt
-> ```
-
-### 4. Configure environment variables
-
-Create a `.env` file in the project root. Copy the block below and fill in your values:
+The defaults work out of the box for local browsing using SQLite. To test checkout and developer onboarding, paste your Stripe test keys into `.env`:
 
 ```dotenv
-# Flask
-SECRET_KEY=
+SECRET_KEY=dev-secret-key-change-in-production
+DATABASE_URL=sqlite:///db.sqlite3
 
-# Stripe (https://dashboard.stripe.com/test/apikeys)
-STRIPE_SECRET_KEY=
-STRIPE_PUBLISHABLE_KEY=
-STRIPE_WEBHOOK_SECRET=
+# Stripe test keys (from dashboard.stripe.com/test/apikeys)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 
-# Stripe Connect Payouts (defaults to 90% dev / 10% platform / 0% fee on tips)
+# Payout splits (defaults to 90% dev / 10% platform / 0% tip fee)
 PLATFORM_FEE_PERCENT=10.0
 DEV_PAYOUT_PERCENT=90.0
 TIP_PLATFORM_FEE_PERCENT=0.0
-
-# Email: Gmail with App Password (https://myaccount.google.com/apppasswords)
-MAIL_SERVER=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USE_TLS=true
-MAIL_USERNAME=
-MAIL_PASSWORD=
-MAIL_DEFAULT_SENDER=
-
-# Firebase / Google login (optional | leave empty to hide the Google button)
-# Either paste the full service-account JSON inline …
-FIREBASE_SERVICE_ACCOUNT_JSON=
-# … or point to a JSON file on disk:
-# FIREBASE_SERVICE_ACCOUNT_PATH=firebase-service-account.json
-FIREBASE_API_KEY=
-FIREBASE_AUTH_DOMAIN=
-FIREBASE_PROJECT_ID=
-FIREBASE_APP_ID=
-
-# Hack Club OAuth (optional)
-HACKCLUB_CLIENT_ID=
-HACKCLUB_CLIENT_SECRET=
-HACKCLUB_REDIRECT_URI=http://localhost:5000/auth/hackclub/callback
-
-# ClamAV malware scanning (optional | set to true to enable)
-CLAMAV_ENABLED=false
-CLAMAV_HOST=localhost
-CLAMAV_PORT=3310
-
-# Rate-limiter storage (memory:// for dev, redis:// for production)
-RATELIMIT_STORAGE_URI=memory://
 ```
 
-### 5. Initialise the database
-
-```bash
-flask db upgrade
-```
-
-If you run for the very first time without any migration history, you can also just start the app: `db.create_all()` runs automatically on startup.
-
-### 6. Run the development server
+### 2. Start the dev server
 
 ```bash
 python app.py
 ```
 
-The app will be available at **http://localhost:5000**.
+Visit **`http://localhost:5000`**. The app automatically creates tables and loads the seed data on startup.
 
----
-
-## Stripe Setup & Automated Developer Payouts (Stripe Connect)
-
-sqush uses **Stripe Connect Express** for automated revenue sharing and payouts:
-- **Game Purchases & Gifts:** By default, 90% is paid out to the game developer, while 10% is retained by sqush as a platform fee (`PLATFORM_FEE_PERCENT=10.0`).
-- **Tip Jar:** 100% of tips go directly to the developer (`TIP_PLATFORM_FEE_PERCENT=0.0`).
-- **Single Item Checkouts:** Uses Stripe **Destination Charges** (`transfer_data.destination` + `application_fee_amount`) for direct settlements.
-- **Multi-Game Cart Checkouts:** Splits revenue across distinct developers via separate Stripe transfers (`stripe.Transfer.create`) after checkout completion.
-- **Retroactive Backlog Payouts:** If a developer hasn't onboarded with Stripe Connect yet, their earnings are recorded with `payout_status = 'pending'`. The moment they complete onboarding in `/dashboard/revenue`, all pending payouts are automatically transferred.
-
-> [!IMPORTANT]
-> **Activating Stripe Connect on your Stripe Account:**
-> Standard Stripe accounts do not have Connect enabled out of the box. To test developer payouts:
-> 1. Log in to your Stripe Dashboard at [dashboard.stripe.com](https://dashboard.stripe.com) and make sure **Test mode** is switched ON.
-> 2. Open [dashboard.stripe.com/connect](https://dashboard.stripe.com/connect) and click **"Get started with Connect"** (or "Aktivieren").
-> 3. Choose **Platform / Marketplace** and enable **Express** accounts. In test mode, you can skip formal business verification and test immediately.
-
-### Local Webhooks
-
-To test checkout fulfillment and Connect account sync locally, forward webhook events to your dev server:
+### 3. Testing Stripe webhooks locally (optional)
+To test checkout fulfillment and Stripe Connect sync locally, forward webhook events:
 
 ```bash
 # Install the Stripe CLI (https://stripe.com/docs/stripe-cli)
 stripe listen --forward-to localhost:5000/checkout/webhook --events checkout.session.completed,account.updated
 ```
 
-Copy the webhook signing secret printed by the CLI and set it as `STRIPE_WEBHOOK_SECRET` in your `.env`.
+Copy the `whsec_...` secret printed by the Stripe CLI into `STRIPE_WEBHOOK_SECRET` in your `.env`.
 
 ---
 
-## Optional: ClamAV (malware scanning)
+## How it works (tech choices and tradeoffs)
 
-Game file uploads (ZIP/EXE) can be scanned automatically. To enable:
+Building an indie store with "real payments", creator payouts, and big game files brought up a few fun challenges:
 
-1. Install ClamAV and start `clamd` (default port 3310).
-2. Set `CLAMAV_ENABLED=true` in `.env`.
+- **Destination Charges vs. Multi Seller Transfers:**
+  When someone buys a single game or leaves a tip, sqush uses Stripe **Destination Charges** (`transfer_data.destination`). The money goes straight to the developer's connected Express account and never touches the platform balance.
+  But Stripe doesn't allow multiple destination accounts in a single checkout session. When a buyer checks out a cart containing games from 3 different creators, sqush processes the transaction on the platform, then the webhook calculates each creator's cut and issues individual `stripe.Transfer.create` calls.
+- **Handling devs who haven't onboarded yet (Backlog fulfillment):**
+  A game can be published and bought before the developer finishes their Stripe onboarding. Instead of failing the payment, sqush tracks the earnings with `payout_status = 'pending'`. The moment the developer completes their onboarding at `/dashboard/revenue`, the webhook triggers a retroactive payout sweep that clears their pending balance automatically.
 
-Without ClamAV the upload still works | scanning is simply skipped.
+  The payment systems are so weird to work with. It really is just a hurdle. Cloudflare not mentioned cause who wants to hear about that.
+
+---
+
+## Running tests
+
+```bash
+# Run all test suites
+python -m unittest discover -s tests
+
+# Or run specific suites
+python -m unittest tests/test_roadmap.py
+python -m unittest tests/test_stripe_connect.py
+python -m unittest tests/test_cards_inventory.py
+```
+
+These Tests should work and not confirm themselves.
 
 ---
 
 ## Database Migrations
 
-This project uses [Flask-Migrate](https://flask-migrate.readthedocs.io/) (Alembic).
+This project uses [Flask Migrate](https://flask-migrate.readthedocs.io/) (It makes your life easier):
 
 ```bash
 # Create a new migration after model changes
@@ -235,38 +215,16 @@ flask db migrate -m "describe your change"
 
 # Apply pending migrations
 flask db upgrade
-
-# Roll back one revision
-flask db downgrade
 ```
 
 ---
 
-## Testing
+## Credits & shoutouts
 
-Run tests using Python's built-in unittest runner:
+- **Hack Club** OAuth login.
+- **Flask** & **SQLAlchemy** for a lightweight backend that stayed fun and fast to hack on.
+- **Stripe** for making multiparty marketplace payouts actually feasible for indie developers (even tho it's still a hurdle to get through that).
+- **Gemini** for making the testdata. (Not a single Interaction on this site is real for now (I also did much of that myself but Gemini was especially in the writing part). So there are entirely made up conversations so the platform feels more alife.)
 
-```bash
-# Run all tests (all suites)
-python -m unittest discover -s tests
-
-# Run roadmap test suite
-python -m unittest tests/test_roadmap.py
-
-# Run Stripe Connect payout test suite
-python -m unittest tests/test_stripe_connect.py
-```
-
----
-
-## Contributing
-
-1. Fork the repo and create a feature branch.
-2. Follow the existing code style.
-3. Open a pull request with a clear description of your changes.
-
----
-
-## License
-
-This project is licensed under the terms of the [LICENSE](LICENSE) file included in this repository.
+## License 
+Find it out yourself it's in the repo.
