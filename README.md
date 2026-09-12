@@ -62,6 +62,8 @@ That's why I chose an AI model. The AI only gets called if there has been a new 
 It gets a full list of the new written text by users. If it sees a violation it **sends parsable json back** (It can only send the variables I intended it to send. NOTHING ELSE IS SEND). 
 
 At the End of the day there is a log of who got banned for what. THE ORIGINAL MESSAGES OF THE BANNED USER GET DELETED for others (It's still in the backend). And it's also being publicly tracked who got banned on the WALL OF SHAME.
+
+
 ![img_1.png](img_1.png) example of said thing
 ---
 # Testing
