@@ -1,3 +1,4 @@
+https://youtu.be/qZ_2PX4qLgo  Me vibecoding (joke) this Readme for 2 hours straight
 # Sqush Store
 Sqush is an indie game store made to buy, browse, publish and (of course) play games.
 
