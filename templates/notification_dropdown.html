@@ -1,0 +1,85 @@
+{% if current_user.is_authenticated %}
+<!-- Notification Bell Dropdown -->
+<div class="dropdown comic-notif-dropdown">
+    <a class="hud-icon-btn position-relative" href="#" id="notifDropdownToggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
+        <i class="bi bi-bell-fill"></i>
+        {% if unread_count > 0 %}
+        <span class="hud-count-badge notif-hud-count">{{ unread_count }}</span>
+        {% endif %}
+    </a>
+    <div class="dropdown-menu dropdown-menu-end comic-notif-menu" aria-labelledby="notifDropdownToggle">
+        <div class="comic-notif-header">
+            <span class="comic-notif-title"><i class="bi bi-bell-fill"></i> Notifications</span>
+            <div class="d-flex align-items-center gap-2">
+                {% if unread_count > 0 %}
+                <button type="button" class="comic-notif-badge comic-notif-badge-clickable" title="Show only new notifications">
+                    {{ unread_count }} NEW
+                </button>
+                <form action="{{ url_for('mark_all_notifications_read') }}" method="POST" class="d-inline m-0 p-0" title="Mark all as read">
+                    <button type="submit" class="comic-notif-check-btn" title="Mark all as read">
+                        <i class="bi bi-check2-all"></i>
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="comic-notif-tabs">
+            <button type="button" class="comic-notif-tab active" data-notif-filter="all">
+                ALL <span class="notif-pill notif-pill-all">{{ recent_notifications|length }}</span>
+            </button>
+            <button type="button" class="comic-notif-tab" data-notif-filter="unread">
+                NEW {% if unread_count > 0 %}<span class="notif-pill notif-pill-new">{{ unread_count }}</span>{% endif %}
+            </button>
+        </div>
+
+        <div class="comic-notif-list">
+            {% for notif in recent_notifications %}
+            <a href="{{ url_for('read_notification', notif_id=notif.id) }}"
+               class="comic-notif-item {% if not notif.is_read %}is-unread{% else %}is-read{% endif %}"
+               data-is-unread="{{ 'true' if not notif.is_read else 'false' }}">
+                <div class="comic-notif-icon-box type-{{ notif.type }}">
+                    {% if notif.type == 'direct_message' %}
+                    <i class="bi bi-chat-dots-fill"></i>
+                    {% elif notif.type in ['friend_request', 'fried_request'] %}
+                    <i class="bi bi-person-plus-fill"></i>
+                    {% elif notif.type in ['game_update', 'update'] %}
+                    <i class="bi bi-megaphone-fill"></i>
+                    {% elif notif.type in ['card_drop', 'trade_request', 'trade_accepted', 'trade_declined'] %}
+                    <i class="bi bi-suit-diamond-fill"></i>
+                    {% elif notif.type == 'badge_unlocked' %}
+                    <i class="bi bi-award-fill"></i>
+                    {% elif notif.type in ['gift_received', 'purchase'] %}
+                    <i class="bi bi-gift-fill"></i>
+                    {% elif notif.type in ['bundle_invite', 'bundle_invite_response'] %}
+                    <i class="bi bi-boxes"></i>
+                    {% elif notif.type in ['roadmap_submission', 'roadmap_status', 'roadmap_comment'] %}
+                    <i class="bi bi-kanban-fill"></i>
+                    {% else %}
+                    <i class="bi bi-bell-fill"></i>
+                    {% endif %}
+                </div>
+                <div class="comic-notif-content">
+                    <div class="comic-notif-text">{{ notif.message }}</div>
+                    <small class="comic-notif-time">
+                        {% if notif.created_at %}{{ notif.created_at.strftime('%d.%m %H:%M') }}{% else %}--:--{% endif %}
+                    </small>
+                </div>
+            </a>
+            {% else %}
+            <div class="comic-notif-empty notif-empty-all">NO NOTIFICATIONS YET!</div>
+            {% endfor %}
+            <div class="comic-notif-empty notif-empty-unread d-none">NO NEW NOTIFICATIONS!</div>
+        </div>
+
+        <div class="comic-notif-footer">
+            <a href="{{ url_for('notifications') }}" class="comic-notif-footer-link">
+                <i class="bi bi-list-ul"></i> ALL NOTIFICATIONS &rarr;
+            </a>
+            <a href="{{ url_for('updates_feed') }}" class="comic-notif-footer-link">
+                <i class="bi bi-megaphone-fill"></i> UPDATES &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
