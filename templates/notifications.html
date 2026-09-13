@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Notifications - Sqush</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/style.css') }}">
+    <style>
+        :root {
+            --ink: #0d0d0d;
+            --paper: #161616;
+            --yellow: #ffe14d;
+            --red: #ff3b30;
+            --blue: #3aa0ff;
+            --green: #33d17a;
+            --purple: #a855f7;
+        }
+        body {
+            background-color: var(--ink);
+            background-image: radial-gradient(rgba(255,255,255,0.06) 1.5px, transparent 1.5px);
+            background-size: 14px 14px;
+            color: #fff;
+            font-family: 'Comic Neue', sans-serif;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, .comic-font {
+            font-family: 'Bangers', 'Comic Neue', sans-serif;
+            letter-spacing: 1px;
+        }
+
+        .notif-page-card {
+            background: var(--paper, #161616);
+            border: 3px solid #000;
+            box-shadow: 6px 6px 0px #000;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .notif-page-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 8px 8px 0px #000;
+        }
+
+        .notif-page-card.is-unread {
+            border-left: 8px solid var(--yellow, #ffe14d);
+            background: #1b1b16;
+        }
+
+        .notif-tab-btn {
+            font-family: 'Bangers', sans-serif;
+            letter-spacing: 1px;
+            font-size: 1.2rem;
+            border: 3px solid #000;
+            box-shadow: 5px 5px 0px #000;
+            padding: 8px 22px;
+            text-decoration: none;
+            color: #000;
+            background: #9e9e9e;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notif-tab-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0px #000;
+            color: #000;
+        }
+
+        .notif-tab-btn.active {
+            background: var(--yellow, #ffe14d);
+            color: #000;
+        }
+
+        .notif-action-btn {
+            font-family: 'Bangers', sans-serif;
+            letter-spacing: 1px;
+            font-size: 1rem;
+            border: 2px solid #000;
+            box-shadow: 3px 3px 0px #000;
+            padding: 6px 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: transform 0.12s, box-shadow 0.12s;
+            cursor: pointer;
+        }
+
+        .notif-action-btn:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 5px 5px 0px #000;
+        }
+
+        .btn-mark-all {
+            background: var(--yellow, #ffe14d);
+            color: #000;
+        }
+
+        .btn-open {
+            background: var(--blue, #3aa0ff);
+            color: #000;
+        }
+        .btn-open:hover {
+            color: #000;
+        }
+
+        .btn-mark-read {
+            background: #fff;
+            color: #000;
+        }
+
+        .notif-page-icon-box {
+            width: 48px;
+            height: 48px;
+            border: 3px solid #000;
+            box-shadow: 3px 3px 0px #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .notif-badge-pill {
+            font-family: 'Bangers', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            padding: 2px 8px;
+            border: 2px solid #000;
+            box-shadow: 2px 2px 0px #000;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="container p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div class="d-flex align-items-center flex-wrap gap-2">
+        <a href="{{ url_for('home') }}" class="NavBar">HOME</a>
+        <a href="{{ url_for('store_front') }}" class="NavBar">STORE</a>
+        <a href="/community" class="NavBar">COMMUNITY</a>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('library') }}" class="NavBar">LIBRARY</a>
+        {% endif %}
+    </div>
+    <div class="user-hud d-flex align-items-center gap-2">
+        {% if current_user.is_authenticated %}
+        {% include "notification_dropdown.html" %}
+
+        <!-- Cart Icon Button -->
+        <a href="/cart" class="hud-icon-btn position-relative" title="Cart">
+            <i class="bi bi-cart-fill"></i>
+            <span class="hud-count-badge cart-count-badge {% if cart_count == 0 %}d-none{% endif %}">{{ cart_count }}</span>
+        </a>
+
+        <!-- Messages Icon Button -->
+        <a href="{{ url_for('messages.inbox') }}" class="hud-icon-btn position-relative" title="Messages">
+            <i class="bi bi-chat-dots-fill"></i>
+            {% if unread_messages_count > 0 %}
+            <span class="hud-count-badge">{{ unread_messages_count }}</span>
+            {% endif %}
+        </a>
+
+        <!-- Inventory Icon Button -->
+        <a href="{{ url_for('inventory.index') }}" class="hud-icon-btn" title="Comic Inventory">
+            <i class="bi bi-collection-fill"></i>
+        </a>
+
+        <!-- Settings Icon Button -->
+        <a href="{{ url_for('settings') }}" class="hud-icon-btn" title="Settings">
+            <i class="bi bi-gear-fill"></i>
+        </a>
+
+        <div class="comic-auth-box">
+            <span class="comic-username">{{ current_user.username }}</span>
+            <a href="{{ url_for('logout') }}" class="comic-logout-btn">LOGOUT</a>
+        </div>
+        {% else %}
+        <div class="comic-auth-box">
+            <a href="{{ url_for('login') }}" class="comic-logout-btn" style="background:#2196f3;">LOGIN</a>
+            <a href="{{ url_for('register') }}" class="comic-logout-btn" style="background:#ffeb3b; color:#000;">REGISTER</a>
+        </div>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="text-white mb-1"><i class="bi bi-bell-fill text-warning"></i> NOTIFICATIONS</h1>
+            <p class="text-white-50 mb-0">STAY UPDATED WITH YOUR ACTIVITY & COMMUNITY</p>
+        </div>
+        {% if unread_count > 0 %}
+        <form action="{{ url_for('mark_all_notifications_read') }}" method="POST" class="m-0">
+            <button type="submit" class="notif-action-btn btn-mark-all">
+                <i class="bi bi-check2-all fs-5"></i> MARK ALL AS READ ({{ unread_count }})
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="d-flex gap-3 mb-4 flex-wrap">
+        <a href="{{ url_for('notifications', filter='all') }}"
+           class="notif-tab-btn {% if filter_type == 'all' %}active{% endif %}">
+            ALL ({{ total_count }})
+        </a>
+        <a href="{{ url_for('notifications', filter='unread') }}"
+           class="notif-tab-btn {% if filter_type == 'unread' %}active{% endif %}">
+            NEW ({{ unread_count }})
+        </a>
+    </div>
+
+    <!-- Notification List -->
+    <div class="d-flex flex-column gap-3 mb-5">
+        {% for notif in notifications %}
+        <div class="notif-page-card p-3 d-flex align-items-center justify-content-between flex-wrap gap-3 {% if not notif.is_read %}is-unread{% endif %}">
+            <div class="halftone-corner"></div>
+            <div class="d-flex align-items-center gap-3" style="min-width: 250px; flex: 1;">
+                <div class="notif-page-icon-box comic-notif-icon-box type-{{ notif.type }}">
+                    {% if notif.type == 'direct_message' %}
+                    <i class="bi bi-chat-dots-fill"></i>
+                    {% elif notif.type in ['friend_request', 'fried_request'] %}
+                    <i class="bi bi-person-plus-fill"></i>
+                    {% elif notif.type in ['game_update', 'update'] %}
+                    <i class="bi bi-megaphone-fill"></i>
+                    {% elif notif.type in ['card_drop', 'trade_request', 'trade_accepted', 'trade_declined'] %}
+                    <i class="bi bi-suit-diamond-fill"></i>
+                    {% elif notif.type == 'badge_unlocked' %}
+                    <i class="bi bi-award-fill"></i>
+                    {% elif notif.type in ['gift_received', 'purchase'] %}
+                    <i class="bi bi-gift-fill"></i>
+                    {% elif notif.type in ['bundle_invite', 'bundle_invite_response'] %}
+                    <i class="bi bi-boxes"></i>
+                    {% elif notif.type in ['roadmap_submission', 'roadmap_status', 'roadmap_comment'] %}
+                    <i class="bi bi-kanban-fill"></i>
+                    {% else %}
+                    <i class="bi bi-bell-fill"></i>
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                        <span class="fw-bold text-white fs-6">{{ notif.message }}</span>
+                        {% if not notif.is_read %}
+                        <span class="notif-badge-pill bg-danger text-white">NEW</span>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex align-items-center gap-3 text-white-50">
+                        <small><i class="bi bi-clock"></i> {% if notif.created_at %}{{ notif.created_at.strftime('%d.%m.%Y %H:%M') }}{% else %}--:--{% endif %}</small>
+                        {% if notif.type %}
+                        <small class="text-uppercase badge bg-secondary">{{ notif.type | replace('_', ' ') }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 ms-auto">
+                {% if not notif.is_read %}
+                <form action="{{ url_for('mark_notification_read', notif_id=notif.id) }}" method="POST" class="m-0">
+                    <button type="submit" class="notif-action-btn btn-mark-read" title="Mark as read">
+                        <i class="bi bi-check2"></i> READ
+                    </button>
+                </form>
+                {% endif %}
+                <a href="{{ url_for('read_notification', notif_id=notif.id) }}" class="notif-action-btn btn-open">
+                    <i class="bi bi-box-arrow-up-right"></i> VIEW &rarr;
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="comic-card p-5 text-center">
+            <div class="halftone-corner"></div>
+            <h2 class="comic-font text-warning mb-2">NO NOTIFICATIONS FOUND!</h2>
+            <p class="text-white-50 fs-5 mb-3">
+                {% if filter_type == 'unread' %}
+                You have no new or unread notifications! All caught up!
+                {% else %}
+                You don't have any notifications right now. Play games, add friends or join discussions!
+                {% endif %}
+            </p>
+            {% if filter_type == 'unread' and total_count > 0 %}
+            <a href="{{ url_for('notifications', filter='all') }}" class="notif-tab-btn active">
+                <i class="bi bi-list-ul"></i> SHOW ALL NOTIFICATIONS ({{ total_count }})
+            </a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    <!-- /Notification List -->
+</div>
+
+{% include "demo_footer.html" %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='JS/script.js') }}"></script>
+</body>
+</html>
