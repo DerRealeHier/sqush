@@ -164,54 +164,7 @@
     <div class="container-fluid d-flex justify-content-end px-4">
         <div class="user-hud d-flex align-items-center gap-2">
             {% if current_user.is_authenticated %}
-            <!-- Notification Bell -->
-            <div class="dropdown">
-                <a class="hud-icon-btn position-relative" href="#" id="notifDropdownToggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
-                    <i class="bi bi-bell-fill"></i>
-                    {% if unread_count > 0 %}
-                    <span class="hud-count-badge">{{ unread_count }}</span>
-                    {% endif %}
-                </a>
-                <div class="dropdown-menu dropdown-menu-end comic-notif-menu" aria-labelledby="notifDropdownToggle">
-                    <div class="comic-notif-header">
-                        <span class="comic-notif-title"><i class="bi bi-bell-fill"></i> Notifications</span>
-                        {% if unread_count > 0 %}
-                        <span class="comic-notif-badge">{{ unread_count }} NEW</span>
-                        {% endif %}
-                    </div>
-                    <div class="comic-notif-list">
-                        {% for notif in recent_notifications %}
-                        <a href="{{ url_for('read_notification', notif_id=notif.id) }}"
-                           class="comic-notif-item {% if not notif.is_read %}is-unread{% endif %}">
-                            <div class="comic-notif-icon-box type-{{ notif.type }}">
-                                {% if notif.type == 'direct_message' %}
-                                <i class="bi bi-chat-dots-fill"></i>
-                                {% elif notif.type == 'friend_request' %}
-                                <i class="bi bi-person-plus-fill"></i>
-                                {% elif notif.type == 'update' %}
-                                <i class="bi bi-megaphone-fill"></i>
-                                {% else %}
-                                <i class="bi bi-bell-fill"></i>
-                                {% endif %}
-                            </div>
-                            <div class="comic-notif-content">
-                                <div class="comic-notif-text">{{ notif.message }}</div>
-                                <small class="comic-notif-time">
-                                    {% if notif.created_at %}{{ notif.created_at.strftime('%H:%M') }}{% else %}--:--{% endif %}
-                                </small>
-                            </div>
-                        </a>
-                        {% else %}
-                        <div class="comic-notif-empty">NO NOTIFICATIONS YET!</div>
-                        {% endfor %}
-                    </div>
-                    <div class="comic-notif-footer">
-                        <a href="{{ url_for('updates_feed') }}" class="comic-notif-updates-link">
-                            <i class="bi bi-megaphone-fill"></i> GAME UPDATES &rarr;
-                        </a>
-                    </div>
-                </div>
-            </div>
+            {% include "notification_dropdown.html" %}
 
             <!-- Cart Icon Button -->
             <a href="/cart" class="hud-icon-btn position-relative" title="Cart">

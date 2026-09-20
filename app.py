@@ -189,18 +189,34 @@ def create_app(config_override=None):
         }
         if current_user.is_authenticated:
             try:
-                unread_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+                unread_notifs = Notification.query.filter_by(
+                    user_id=current_user.id, is_read=False
+                ).order_by(Notification.created_at.desc()).all()
+                unread_count = len(unread_notifs)
                 data["unread_count"] = unread_count
             except Exception as e:
                 print(f"DEBUG: Notification Fehler: {e}")
+                unread_notifs = []
                 data["unread_count"] = 0
+                unread_count = 0
 
             try:
-                data["recent_notifications"] = Notification.query.filter_by(
-                    user_id=current_user.id
-                ).order_by(Notification.created_at.desc()).limit(5).all()
+                # Ensure all unread notifications are loaded so users can display all new ones!
+                read_limit = max(5, 15 - len(unread_notifs))
+                read_notifs = Notification.query.filter_by(
+                    user_id=current_user.id, is_read=True
+                ).order_by(Notification.created_at.desc()).limit(read_limit).all()
+
+                data["recent_notifications"] = sorted(
+                    unread_notifs + read_notifs,
+                    key=lambda n: n.created_at or datetime.min,
+                    reverse=True
+                )
+                data["total_notifications_count"] = Notification.query.filter_by(user_id=current_user.id).count()
             except Exception as e:
+                print(f"DEBUG: Notification Fehler: {e}")
                 data["recent_notifications"] = []
+                data["total_notifications_count"] = 0
 
             try:
                 data["current_user_featured_badge"] = get_featured_badge(current_user)
@@ -257,6 +273,7 @@ def create_app(config_override=None):
         else:
             data["unread_count"] = 0
             data["recent_notifications"] = []
+            data["total_notifications_count"] = 0
             data["unread_messages_count"] = 0
             data["current_user_featured_badge"] = None
             data["wishlist_ids"] = set()

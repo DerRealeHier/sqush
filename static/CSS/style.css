@@ -2656,9 +2656,133 @@ body.bundle-dashboard .bundle-stat-box small {
     color: #000;
 }
 
-.comic-notif-icon-box.type-update {
+.comic-notif-icon-box.type-update,
+.comic-notif-icon-box.type-game_update {
     background: var(--yellow, #ffe14d);
     color: #000;
+}
+
+.comic-notif-icon-box.type-card_drop,
+.comic-notif-icon-box.type-trade_request,
+.comic-notif-icon-box.type-trade_accepted,
+.comic-notif-icon-box.type-trade_declined {
+    background: #a855f7;
+    color: #fff;
+}
+
+.comic-notif-icon-box.type-badge_unlocked {
+    background: var(--yellow, #ffe14d);
+    color: #000;
+}
+
+.comic-notif-icon-box.type-gift_received,
+.comic-notif-icon-box.type-purchase {
+    background: #ec4899;
+    color: #fff;
+}
+
+.comic-notif-icon-box.type-bundle_invite,
+.comic-notif-icon-box.type-bundle_invite_response {
+    background: #f97316;
+    color: #000;
+}
+
+.comic-notif-icon-box.type-roadmap_submission,
+.comic-notif-icon-box.type-roadmap_status,
+.comic-notif-icon-box.type-roadmap_comment {
+    background: #06b6d4;
+    color: #000;
+}
+
+.comic-notif-badge-clickable {
+    cursor: pointer;
+    transition: transform 0.1s ease, filter 0.1s ease;
+}
+
+.comic-notif-badge-clickable:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+.comic-notif-check-btn {
+    background: #000;
+    color: #fff;
+    border: 2px solid #000;
+    box-shadow: 2px 2px 0px #000;
+    font-size: 0.85rem;
+    padding: 1px 6px;
+    cursor: pointer;
+    transition: transform 0.1s ease, background-color 0.1s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+}
+
+.comic-notif-check-btn:hover {
+    background: var(--green, #33d17a);
+    color: #000;
+    transform: scale(1.08);
+}
+
+.comic-notif-tabs {
+    display: flex;
+    background: #111;
+    border-bottom: 2px solid #000;
+}
+
+.comic-notif-tab {
+    flex: 1;
+    background: #222;
+    border: none;
+    border-right: 2px solid #000;
+    padding: 6px 10px;
+    color: #bbb;
+    font-family: 'Bangers', sans-serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.comic-notif-tab:last-child {
+    border-right: none;
+}
+
+.comic-notif-tab:hover {
+    background: #2d2d2d;
+    color: #fff;
+}
+
+.comic-notif-tab.active {
+    background: var(--yellow, #ffe14d);
+    color: #000;
+}
+
+.comic-notif-tab .notif-pill {
+    background: #000;
+    color: #fff;
+    font-family: 'Bangers', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.5px;
+    padding: 0 5px;
+    border: 1px solid #000;
+    border-radius: 999px;
+    line-height: 1.2;
+}
+
+.comic-notif-tab.active .notif-pill {
+    background: #000;
+    color: var(--yellow, #ffe14d);
+}
+
+.comic-notif-tab .notif-pill-new {
+    background: var(--red, #ff3b30);
+    color: #fff;
 }
 
 .comic-notif-content {
@@ -2696,22 +2820,27 @@ body.bundle-dashboard .bundle-stat-box small {
 .comic-notif-footer {
     border-top: 3px solid #000;
     background: #0d0d0d;
-    padding: 8px 14px;
-    text-align: center;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
 }
 
+.comic-notif-footer-link,
 .comic-notif-updates-link {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     font-family: 'Bangers', sans-serif;
-    font-size: 0.95rem;
-    letter-spacing: 1px;
+    font-size: 0.88rem;
+    letter-spacing: 0.5px;
     color: var(--yellow, #ffe14d);
     text-decoration: none;
     transition: transform 0.1s ease, color 0.1s ease;
 }
 
+.comic-notif-footer-link:hover,
 .comic-notif-updates-link:hover {
     color: #fff;
     transform: scale(1.04);

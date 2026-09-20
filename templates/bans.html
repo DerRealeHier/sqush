@@ -161,6 +161,7 @@
     <div class="container-fluid d-flex justify-content-end px-4">
         <div class="user-hud d-flex align-items-center gap-2">
             {% if current_user.is_authenticated %}
+            {% include "notification_dropdown.html" %}
             <!-- Messages Icon -->
             <a href="{{ url_for('messages.inbox') }}" class="hud-icon-btn position-relative" title="Messages">
                 <i class="bi bi-chat-dots-fill"></i>

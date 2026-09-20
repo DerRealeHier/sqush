@@ -252,6 +252,7 @@
             <span class="hud-count-badge cart-count-badge {% if cart_count == 0 %}d-none{% endif %}">{{ cart_count }}</span>
         </a>
         {% if current_user.is_authenticated %}
+        {% include "notification_dropdown.html" %}
         <!-- Messages Icon Button -->
         <a href="{{ url_for('messages.inbox') }}" class="hud-icon-btn position-relative" title="Messages">
             <i class="bi bi-chat-dots-fill"></i>

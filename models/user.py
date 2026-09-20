@@ -76,7 +76,9 @@ class User(UserMixin, db.Model):
 
     @property
     def recent_notifications(self):
-        return Notification.query.filter_by(user_id=self.id).order_by(Notification.created_at.desc()).limit(5).all()
+        unread = Notification.query.filter_by(user_id=self.id, is_read=False).order_by(Notification.created_at.desc()).all()
+        read = Notification.query.filter_by(user_id=self.id, is_read=True).order_by(Notification.created_at.desc()).limit(max(5, 15 - len(unread))).all()
+        return sorted(unread + read, key=lambda n: n.created_at or datetime.min, reverse=True)
 
 
 class Notification(db.Model):

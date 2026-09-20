@@ -898,4 +898,54 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => console.error("Follow game error:", err));
     });
 
+    // Notification dropdown tabs (ALL vs NEW)
+    document.addEventListener('click', (e) => {
+        const tabBtn = e.target.closest('.comic-notif-tab');
+        if (tabBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const menu = tabBtn.closest('.comic-notif-menu');
+            if (!menu) return;
+
+            const filter = tabBtn.getAttribute('data-notif-filter');
+            menu.querySelectorAll('.comic-notif-tab').forEach(t => t.classList.remove('active'));
+            tabBtn.classList.add('active');
+
+            const items = menu.querySelectorAll('.comic-notif-item');
+            const emptyAll = menu.querySelector('.notif-empty-all');
+            const emptyUnread = menu.querySelector('.notif-empty-unread');
+
+            let visibleCount = 0;
+            items.forEach(item => {
+                const isUnread = item.getAttribute('data-is-unread') === 'true';
+                if (filter === 'unread') {
+                    if (isUnread) {
+                        item.style.display = 'flex';
+                        visibleCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                } else {
+                    item.style.display = 'flex';
+                    visibleCount++;
+                }
+            });
+
+            if (emptyAll) emptyAll.classList.toggle('d-none', filter === 'unread' || visibleCount > 0);
+            if (emptyUnread) emptyUnread.classList.toggle('d-none', filter !== 'unread' || visibleCount > 0);
+            return;
+        }
+
+        const clickableBadge = e.target.closest('.comic-notif-badge-clickable');
+        if (clickableBadge) {
+            e.preventDefault();
+            e.stopPropagation();
+            const menu = clickableBadge.closest('.comic-notif-menu');
+            if (!menu) return;
+            const unreadTab = menu.querySelector('.comic-notif-tab[data-notif-filter="unread"]');
+            if (unreadTab) unreadTab.click();
+        }
+    });
+
 });

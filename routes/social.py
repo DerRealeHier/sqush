@@ -266,6 +266,56 @@ def updates_feed():
                            following_ids=following_ids, my_votes=my_votes)
 
 
+@social_bp.route("/notifications")
+@login_required
+def notifications():
+    filter_type = request.args.get("filter", "all").lower()
+    if filter_type not in ["all", "unread"]:
+        filter_type = "all"
+
+    query = Notification.query.filter_by(user_id=current_user.id)
+    if filter_type == "unread":
+        query = query.filter_by(is_read=False)
+
+    user_notifications = query.order_by(Notification.created_at.desc()).all()
+    unread_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+    total_count = Notification.query.filter_by(user_id=current_user.id).count()
+
+    return render_template(
+        "notifications.html",
+        notifications=user_notifications,
+        filter_type=filter_type,
+        unread_count=unread_count,
+        total_count=total_count
+    )
+
+
+@social_bp.route("/notifications/mark-all-read", methods=["POST", "GET"])
+@login_required
+def mark_all_notifications_read():
+    Notification.query.filter_by(user_id=current_user.id, is_read=False).update({"is_read": True})
+    db.session.commit()
+    referrer = request.referrer
+    if referrer and referrer.startswith(request.host_url):
+        return redirect(referrer)
+    return redirect(url_for("notifications"))
+
+
+@social_bp.route("/notification/mark-read/<int:notif_id>", methods=["POST", "GET"])
+@login_required
+def mark_notification_read(notif_id):
+    notif = Notification.query.get_or_404(notif_id)
+    if notif.user_id == current_user.id:
+        notif.is_read = True
+        db.session.commit()
+    if request.is_json:
+        return jsonify({"status": "success", "id": notif_id})
+    referrer = request.referrer
+    if referrer and referrer.startswith(request.host_url):
+        return redirect(referrer)
+    return redirect(url_for("notifications"))
+
+
 @social_bp.route("/notification/read/<int:notif_id>")
 @login_required
 def read_notification(notif_id):
@@ -274,16 +324,16 @@ def read_notification(notif_id):
     if notif.user_id == current_user.id:
         notif.is_read = True
         db.session.commit()
-    if notif.type == "friend_request":
+    if notif.type in ["friend_request", "fried_request"]:
         sender_name = notif.message.split(" ")[0]
         sender = User.query.filter_by(username=sender_name).first()
         if sender:
             return redirect(url_for('profile', username=sender.username))
     elif notif.type in ["bundle_invite", "bundle_invite_response"]:
         return redirect(url_for('developer_bundles'))
-    elif notif.type == "game_update":
+    elif notif.type in ["game_update", "update"]:
         return redirect(url_for('updates_feed'))
-    elif notif.type == "gift_received":
+    elif notif.type in ["gift_received", "purchase"]:
         return redirect(url_for('library'))
     elif notif.type == "direct_message":
         # they got mail (: takes them right to the chat
@@ -297,6 +347,10 @@ def read_notification(notif_id):
             game_obj = Game.query.filter_by(title=match.group(1)).first()
             if game_obj:
                 return redirect(url_for('roadmap.game_roadmap', game_id=game_obj.id))
+    elif notif.type in ["card_drop", "trade_request", "trade_accepted", "trade_declined"]:
+        return redirect(url_for('inventory.index'))
+    elif notif.type == "badge_unlocked":
+        return redirect(url_for('profile', username=current_user.username))
 
     return redirect(url_for("profile", username=current_user.username))
 
