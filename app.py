@@ -2,7 +2,7 @@ import os
 from flask import Flask, redirect, url_for, flash, request, session
 from flask_login import current_user
 import config
-from extensions import db, login_manager, mail, limiter, migrate, email_serializer
+from extensions import db, login_manager, mail, limiter, migrate, email_serializer, socketio
 from models import (
     Friendship,
     User,
@@ -119,6 +119,7 @@ def create_app(config_override=None):
     limiter.init_app(app)
     #Yea I need that
     migrate.init_app(app, db)
+    socketio.init_app(app)
 
     # immediate logout if user got banned (:
     @app.before_request
@@ -438,4 +439,4 @@ with app.app_context():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    socketio.run(app, debug=True)

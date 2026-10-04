@@ -10,11 +10,13 @@ from itsdangerous import URLSafeTimedSerializer
 import stripe
 import firebase_admin
 from firebase_admin import credentials as firebase_credentials, auth as firebase_auth
+from flask_socketio import SocketIO
 import config
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 
 db = SQLAlchemy()
+socketio = SocketIO(cors_allowed_origins="*")
 
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):

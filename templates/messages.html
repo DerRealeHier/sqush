@@ -123,7 +123,9 @@
             <div class="conversations-list list-group">
                 {% for conv in conversations %}
                 <a href="{{ url_for('messages.conversation', username=conv.user.username) }}"
-                   class="conversation-item list-group-item list-group-item-action {% if active_partner and active_partner.id == conv.user.id %}active{% endif %}">
+                   class="conversation-item list-group-item list-group-item-action {% if active_partner and active_partner.id == conv.user.id %}active{% endif %}"
+                   data-user-id="{{ conv.user.id }}"
+                   data-username="{{ conv.user.username }}">
                     <div class="d-flex align-items-center gap-2">
                         <img src="{{ url_for('static', filename=conv.user.profile_image) }}" alt="{{ conv.user.username }}" class="conversation-avatar rounded-circle" style="width: 36px; height: 36px; object-fit: cover;">
                         <div class="conversation-info flex-grow-1">
@@ -132,9 +134,7 @@
                                 {% if conv.user.role == 'dev' %}
                                 <span class="badge bg-danger ms-1">DEV</span>
                                 {% endif %}
-                                {% if conv.latest_message %}
-                                <small class="text-muted conversation-time">{{ conv.latest_message.created_at.strftime('%H:%M') }}</small>
-                                {% endif %}
+                                <small class="text-muted conversation-time">{% if conv.latest_message %}{{ conv.latest_message.created_at.strftime('%H:%M') }}{% endif %}</small>
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="conversation-preview text-muted small text-truncate" style="max-width: 180px;">
@@ -144,9 +144,7 @@
                                     <span class="fst-italic">New conversation</span>
                                     {% endif %}
                                 </span>
-                                {% if conv.unread_count > 0 %}
-                                <span class="badge bg-danger rounded-pill">{{ conv.unread_count }}</span>
-                                {% endif %}
+                                <span class="badge bg-danger rounded-pill conv-unread-badge {% if conv.unread_count == 0 %}d-none{% endif %}">{{ conv.unread_count }}</span>
                             </div>
                         </div>
                     </div>
@@ -198,7 +196,7 @@
                 <!-- Messages Stream -->
                 <div class="messages-stream mb-3" style="max-height: 450px; overflow-y: auto;">
                     {% for msg in messages %}
-                    <div class="message-row mb-3 d-flex {% if msg.sender_id == current_user.id %}justify-content-end{% else %}justify-content-start{% endif %}">
+                    <div class="message-row mb-3 d-flex {% if msg.sender_id == current_user.id %}justify-content-end{% else %}justify-content-start{% endif %}" id="msg-{{ msg.id }}">
                         <div class="message-bubble p-2 rounded {% if msg.sender_id == current_user.id %}bg-primary text-white{% else %}bg-light text-dark border{% endif %}" style="max-width: 75%;">
                             <div class="message-meta small mb-1 d-flex justify-content-between gap-3 {% if msg.sender_id == current_user.id %}text-white-50{% else %}text-muted{% endif %}">
                                 <span class="message-sender fw-bold">{{ msg.sender.username }}</span>
@@ -295,8 +293,8 @@
                                 </span>
                                 {% endif %}
 
-                                <form action="{{ url_for('messages.delete_message', message_id=msg.id) }}" method="POST" class="d-inline ms-2">
-                                    <button type="submit" class="btn btn-link btn-sm p-0 {% if msg.sender_id == current_user.id %}text-white-50{% else %}text-muted{% endif %}" title="Delete message" onclick="return confirm('Delete this message?');">
+                                <form action="{{ url_for('messages.delete_message', message_id=msg.id) }}" method="POST" class="d-inline ms-2 delete-message-form" data-message-id="{{ msg.id }}">
+                                    <button type="submit" class="btn btn-link btn-sm p-0 {% if msg.sender_id == current_user.id %}text-white-50{% else %}text-muted{% endif %}" title="Delete message">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
@@ -310,15 +308,18 @@
                     {% endfor %}
                 </div>
 
+                <!-- Live Typing Indicator -->
+                <div id="typingIndicator" class="small text-muted fst-italic px-2 mb-1" style="display: none; min-height: 20px;"></div>
+
                 <!-- Message Compose Form -->
-                <form action="{{ url_for('messages.send_message') }}" method="POST" class="message-compose-form mt-3 border-top pt-3">
+                <form action="{{ url_for('messages.send_message') }}" method="POST" class="message-compose-form mt-1 border-top pt-3">
                     <input type="hidden" name="recipient_id" value="{{ active_partner.id }}">
                     {% if active_game %}
                     <input type="hidden" name="game_id" value="{{ active_game.id }}">
                     {% endif %}
                     <div class="d-flex gap-2">
-                        <textarea name="content" class="form-control" rows="2" placeholder="Write your message..." required></textarea>
-                        <button type="submit" class="btn btn-primary px-4">Send</button>
+                        <textarea name="content" id="messageContentInput" class="form-control" rows="2" placeholder="Write your message..." required></textarea>
+                        <button type="submit" id="messageSendBtn" class="btn btn-primary px-4">Send</button>
                     </div>
                 </form>
             </div>
@@ -403,13 +404,238 @@
 {% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="{{ url_for('static', filename='JS/script.js') }}"></script>
 <script>
-    // scroll to bottom of messages stream on page load if stream exists
-    const stream = document.querySelector('.messages-stream');
-    if (stream) {
-        stream.scrollTop = stream.scrollHeight;
-    }
+    (function() {
+        const stream = document.querySelector('.messages-stream');
+        if (stream) {
+            stream.scrollTop = stream.scrollHeight;
+        }
+
+        // Initialize Socket.IO connection
+        const socket = io();
+
+        const currentUserId = {{ current_user.id }};
+        const activePartnerId = {{ active_partner.id if active_partner else 'null' }};
+        const activePartnerUsername = {{ active_partner.username|tojson if active_partner else 'null' }};
+        const activeGameId = {{ active_game.id if active_game else 'null' }};
+        const activeGameTitle = {{ active_game.title|tojson if active_game else 'null' }};
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // 1. Mark conversation as read on load & window focus
+        if (activePartnerId) {
+            socket.emit('mark_read', { sender_id: activePartnerId });
+            window.addEventListener('focus', function() {
+                socket.emit('mark_read', { sender_id: activePartnerId });
+            });
+        }
+
+        // 2. Chat form sending & typing indicator
+        const chatForm = document.querySelector('.message-compose-form');
+        const contentInput = document.getElementById('messageContentInput');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        if (chatForm && contentInput) {
+            contentInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    chatForm.requestSubmit();
+                }
+            });
+
+            let typingTimeout = null;
+            contentInput.addEventListener('input', function() {
+                if (!activePartnerId) return;
+                socket.emit('typing', { recipient_id: activePartnerId });
+                clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(function() {
+                    socket.emit('stop_typing', { recipient_id: activePartnerId });
+                }, 1500);
+            });
+
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const text = contentInput.value.trim();
+                if (!text || !activePartnerId) return;
+
+                socket.emit('stop_typing', { recipient_id: activePartnerId });
+
+                socket.emit('send_direct_message', {
+                    recipient_id: activePartnerId,
+                    content: text,
+                    game_id: activeGameId
+                }, function(res) {
+                    if (res && res.status === 'error') {
+                        alert(res.error || 'Failed to send message.');
+                    }
+                });
+
+                contentInput.value = '';
+                contentInput.focus();
+            });
+        }
+
+        // 3. Append message bubble to stream
+        function appendMessageBubble(data, isSelf) {
+            if (!stream) return;
+
+            const emptyPlaceholder = stream.querySelector('.no-messages-placeholder');
+            if (emptyPlaceholder) emptyPlaceholder.remove();
+
+            if (document.getElementById('msg-' + data.id)) return;
+
+            const row = document.createElement('div');
+            row.id = 'msg-' + data.id;
+            row.className = 'message-row mb-3 d-flex ' + (isSelf ? 'justify-content-end' : 'justify-content-start');
+
+            let gameHtml = '';
+            if (data.game_title) {
+                gameHtml = '<div class="message-game-tag small badge bg-dark mb-1 d-block text-start">Regarding: ' + escapeHtml(data.game_title) + '</div>';
+            }
+
+            const statusHtml = isSelf
+                ? '<span class="message-status text-white-50">' + (data.is_read ? 'Read' : 'Sent') + '</span>'
+                : '';
+
+            row.innerHTML =
+                '<div class="message-bubble p-2 rounded ' + (isSelf ? 'bg-primary text-white' : 'bg-light text-dark border') + '" style="max-width: 75%;">' +
+                    '<div class="message-meta small mb-1 d-flex justify-content-between gap-3 ' + (isSelf ? 'text-white-50' : 'text-muted') + '">' +
+                        '<span class="message-sender fw-bold">' + escapeHtml(data.sender_username) + '</span>' +
+                        '<span class="message-time">' + escapeHtml(data.created_at || data.time) + '</span>' +
+                    '</div>' +
+                    gameHtml +
+                    '<div class="message-content text-break">' +
+                        escapeHtml(data.content) +
+                    '</div>' +
+                    '<div class="message-footer mt-1 d-flex justify-content-between align-items-center small">' +
+                        statusHtml +
+                        '<form action="/messages/delete/' + data.id + '" method="POST" class="d-inline ms-2 delete-message-form" data-message-id="' + data.id + '">' +
+                            '<button type="submit" class="btn btn-link btn-sm p-0 ' + (isSelf ? 'text-white-50' : 'text-muted') + '" title="Delete message">' +
+                                '<i class="bi bi-trash"></i>' +
+                            '</button>' +
+                        '</form>' +
+                    '</div>' +
+                '</div>';
+
+            stream.appendChild(row);
+            stream.scrollTop = stream.scrollHeight;
+        }
+
+        // 4. Update sidebar conversation item
+        function updateSidebar(userId, username, content, timeStr, incrementBadge) {
+            const item = document.querySelector('.conversation-item[data-user-id="' + userId + '"]');
+            if (item) {
+                const preview = item.querySelector('.conversation-preview');
+                if (preview) preview.textContent = content;
+
+                const timeEl = item.querySelector('.conversation-time');
+                if (timeEl && timeStr) timeEl.textContent = timeStr;
+
+                const badge = item.querySelector('.conv-unread-badge');
+                if (badge) {
+                    if (incrementBadge) {
+                        const current = parseInt(badge.textContent) || 0;
+                        badge.textContent = current + 1;
+                        badge.classList.remove('d-none');
+                    } else {
+                        badge.textContent = '0';
+                        badge.classList.add('d-none');
+                    }
+                }
+
+                const list = item.parentElement;
+                if (list) list.prepend(item);
+            }
+        }
+
+        // 5. Socket Listeners
+        socket.on('message_sent', function(data) {
+            if (activePartnerId && data.recipient_id === activePartnerId) {
+                appendMessageBubble(data, true);
+            }
+            updateSidebar(data.recipient_id, data.recipient_username, data.content, data.time, false);
+        });
+
+        socket.on('new_message', function(data) {
+            if (activePartnerId && data.sender_id === activePartnerId) {
+                appendMessageBubble(data, false);
+                socket.emit('mark_read', { sender_id: activePartnerId });
+                updateSidebar(data.sender_id, data.sender_username, data.content, data.time, false);
+            } else {
+                updateSidebar(data.sender_id, data.sender_username, data.content, data.time, true);
+            }
+        });
+
+        // 6. Delete message via WebSocket
+        document.addEventListener('submit', function(e) {
+            const delForm = e.target.closest('.delete-message-form');
+            if (delForm) {
+                e.preventDefault();
+                if (confirm('Delete this message?')) {
+                    const msgId = delForm.getAttribute('data-message-id');
+                    socket.emit('delete_message', { message_id: msgId });
+                }
+            }
+        });
+
+        socket.on('message_deleted', function(data) {
+            const el = document.getElementById('msg-' + data.message_id);
+            if (el) {
+                el.style.transition = 'opacity 0.2s';
+                el.style.opacity = '0';
+                setTimeout(function() { el.remove(); }, 200);
+            }
+        });
+
+        // 7. Read Receipts live update
+        socket.on('messages_read', function(data) {
+            if (activePartnerId && data.reader_id === activePartnerId) {
+                document.querySelectorAll('.message-status').forEach(function(el) {
+                    el.textContent = 'Read';
+                });
+            }
+        });
+
+        // 8. Navbar unread messages count update
+        socket.on('unread_count_update', function(data) {
+            const badge = document.querySelector('a[href*="/messages"] .hud-count-badge');
+            if (badge) {
+                if (data.unread_count > 0) {
+                    badge.textContent = data.unread_count;
+                    badge.classList.remove('d-none');
+                } else {
+                    badge.classList.add('d-none');
+                }
+            }
+        });
+
+        // 9. Typing Indicators
+        let typingTimer = null;
+        socket.on('user_typing', function(data) {
+            if (activePartnerId && data.user_id === activePartnerId && typingIndicator) {
+                typingIndicator.textContent = data.username + ' is typing...';
+                typingIndicator.style.display = 'block';
+                clearTimeout(typingTimer);
+                typingTimer = setTimeout(function() {
+                    typingIndicator.style.display = 'none';
+                }, 3000);
+            }
+        });
+
+        socket.on('user_stop_typing', function(data) {
+            if (activePartnerId && data.user_id === activePartnerId && typingIndicator) {
+                typingIndicator.style.display = 'none';
+                clearTimeout(typingTimer);
+            }
+        });
+    })();
 </script>
 </body>
 </html>

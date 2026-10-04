@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import current_user, login_required
+from flask_socketio import emit, join_room, leave_room
 from sqlalchemy import or_, and_
-from extensions import db
+from extensions import db, socketio
 from models.user import User, Notification
 from models.game import Game
 from models.message import DirectMessage
@@ -175,6 +176,28 @@ def send_message():
     db.session.add(notif)
     db.session.commit()
 
+    unread_count = DirectMessage.query.filter_by(
+        recipient_id=recipient.id,
+        is_read=False
+    ).count()
+
+    payload = {
+        "id": new_msg.id,
+        "sender_id": current_user.id,
+        "sender_username": current_user.username,
+        "sender_avatar": url_for("static", filename=current_user.profile_image),
+        "recipient_id": recipient.id,
+        "recipient_username": recipient.username,
+        "content": new_msg.content,
+        "game_id": new_msg.game_id,
+        "game_title": new_msg.game.title if new_msg.game else None,
+        "created_at": new_msg.created_at.strftime('%d.%m %H:%M'),
+        "time": new_msg.created_at.strftime('%H:%M'),
+        "is_read": False,
+    }
+    socketio.emit("new_message", payload, room=f"user_{recipient.id}")
+    socketio.emit("unread_count_update", {"unread_count": unread_count}, room=f"user_{recipient.id}")
+
     if request.is_json:
         return jsonify({
             "status": "success",
@@ -195,8 +218,12 @@ def delete_message(message_id):
         return "Access Denied", 403
 
     other_user = msg.recipient if msg.sender_id == current_user.id else msg.sender
+    s_id = msg.sender_id
+    r_id = msg.recipient_id
     db.session.delete(msg)
     db.session.commit()
+    socketio.emit("message_deleted", {"message_id": message_id}, room=f"user_{s_id}")
+    socketio.emit("message_deleted", {"message_id": message_id}, room=f"user_{r_id}")
     return redirect(url_for("messages.conversation", username=other_user.username))
 
 
@@ -275,3 +302,179 @@ def trade_cancel(trade_id):
     else:
         flash(f"[TRADE ERROR] {msg}", "error")
     return redirect(request.referrer or url_for("messages.inbox"))
+
+
+# -------------------------------------------------------------------------
+# WebSocket Real-Time Handlers
+# -------------------------------------------------------------------------
+
+@socketio.on("connect")
+def handle_socket_connect():
+    if current_user.is_authenticated:
+        join_room(f"user_{current_user.id}")
+
+
+@socketio.on("send_direct_message")
+def handle_socket_send_message(data):
+    if not current_user.is_authenticated:
+        return {"status": "error", "error": "Unauthorized"}
+
+    recipient_id = data.get("recipient_id")
+    try:
+        recipient_id = int(recipient_id) if recipient_id is not None else None
+    except (ValueError, TypeError):
+        return {"status": "error", "error": "Invalid recipient."}
+
+    content = (data.get("content") or "").strip()
+    game_id = data.get("game_id")
+    try:
+        game_id = int(game_id) if game_id is not None else None
+    except (ValueError, TypeError):
+        game_id = None
+
+    if not content:
+        return {"status": "error", "error": "Message cannot be empty."}
+
+    recipient = db.session.get(User, recipient_id) if recipient_id else None
+    if not recipient or recipient.id == current_user.id:
+        return {"status": "error", "error": "Invalid recipient."}
+
+    new_msg = DirectMessage(
+        sender_id=current_user.id,
+        recipient_id=recipient.id,
+        content=content,
+        game_id=game_id
+    )
+    db.session.add(new_msg)
+
+    notif = Notification(
+        user_id=recipient.id,
+        message=f"{current_user.username} sent you a message",
+        type="direct_message"
+    )
+    db.session.add(notif)
+    db.session.commit()
+
+    unread_count = DirectMessage.query.filter_by(
+        recipient_id=recipient.id,
+        is_read=False
+    ).count()
+
+    payload = {
+        "id": new_msg.id,
+        "sender_id": current_user.id,
+        "sender_username": current_user.username,
+        "sender_avatar": url_for("static", filename=current_user.profile_image),
+        "recipient_id": recipient.id,
+        "recipient_username": recipient.username,
+        "content": new_msg.content,
+        "game_id": new_msg.game_id,
+        "game_title": new_msg.game.title if new_msg.game else None,
+        "created_at": new_msg.created_at.strftime('%d.%m %H:%M'),
+        "time": new_msg.created_at.strftime('%H:%M'),
+        "is_read": False,
+    }
+
+    emit("new_message", payload, room=f"user_{recipient.id}")
+    emit("unread_count_update", {"unread_count": unread_count}, room=f"user_{recipient.id}")
+    emit("message_sent", payload, room=f"user_{current_user.id}")
+
+    return {"status": "success", "message": payload}
+
+
+@socketio.on("mark_read")
+def handle_socket_mark_read(data):
+    if not current_user.is_authenticated:
+        return
+    sender_id = data.get("sender_id")
+    try:
+        sender_id = int(sender_id) if sender_id is not None else None
+    except (ValueError, TypeError):
+        return
+
+    if not sender_id:
+        return
+
+    DirectMessage.query.filter_by(
+        sender_id=sender_id,
+        recipient_id=current_user.id,
+        is_read=False
+    ).update({"is_read": True})
+
+    sender_user = db.session.get(User, sender_id)
+    if sender_user:
+        notifs = Notification.query.filter_by(
+            user_id=current_user.id,
+            type="direct_message",
+            is_read=False
+        ).all()
+        for n in notifs:
+            if n.message.startswith(f"{sender_user.username} "):
+                n.is_read = True
+    db.session.commit()
+
+    emit("messages_read", {"reader_id": current_user.id, "sender_id": sender_id}, room=f"user_{sender_id}")
+
+    unread_count = DirectMessage.query.filter_by(
+        recipient_id=current_user.id,
+        is_read=False
+    ).count()
+    emit("unread_count_update", {"unread_count": unread_count}, room=f"user_{current_user.id}")
+
+
+@socketio.on("delete_message")
+def handle_socket_delete_message(data):
+    if not current_user.is_authenticated:
+        return {"status": "error", "error": "Unauthorized"}
+    msg_id = data.get("message_id")
+    try:
+        msg_id = int(msg_id) if msg_id is not None else None
+    except (ValueError, TypeError):
+        return {"status": "error", "error": "Invalid message ID"}
+
+    msg = db.session.get(DirectMessage, msg_id) if msg_id else None
+    if not msg:
+        return {"status": "error", "error": "Message not found"}
+    if msg.sender_id != current_user.id and msg.recipient_id != current_user.id:
+        return {"status": "error", "error": "Access denied"}
+
+    s_id = msg.sender_id
+    r_id = msg.recipient_id
+    db.session.delete(msg)
+    db.session.commit()
+
+    emit("message_deleted", {"message_id": msg_id}, room=f"user_{s_id}")
+    emit("message_deleted", {"message_id": msg_id}, room=f"user_{r_id}")
+    return {"status": "success"}
+
+
+@socketio.on("typing")
+def handle_socket_typing(data):
+    if not current_user.is_authenticated:
+        return
+    recipient_id = data.get("recipient_id")
+    try:
+        recipient_id = int(recipient_id) if recipient_id is not None else None
+    except (ValueError, TypeError):
+        return
+    if recipient_id:
+        emit("user_typing", {
+            "user_id": current_user.id,
+            "username": current_user.username
+        }, room=f"user_{recipient_id}")
+
+
+@socketio.on("stop_typing")
+def handle_socket_stop_typing(data):
+    if not current_user.is_authenticated:
+        return
+    recipient_id = data.get("recipient_id")
+    try:
+        recipient_id = int(recipient_id) if recipient_id is not None else None
+    except (ValueError, TypeError):
+        return
+    if recipient_id:
+        emit("user_stop_typing", {
+            "user_id": current_user.id,
+            "username": current_user.username
+        }, room=f"user_{recipient_id}")
