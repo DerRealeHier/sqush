@@ -13,8 +13,8 @@ REMOTE_HASH=$(git rev-parse origin/main)
 if [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
     echo "[$(date)] Update detected: $LOCAL_HASH -> $REMOTE_HASH"
     
-    # Pull new code
-    git pull origin main
+    # Sync code cleanly with origin/main
+    git reset --hard origin/main
     
     # Install dependencies if requirements.txt changed
     if git diff --name-only "$LOCAL_HASH" "$REMOTE_HASH" | grep -q "requirements.txt"; then
