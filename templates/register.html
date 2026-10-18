@@ -30,25 +30,34 @@
         h2, h5, .comic-font { font-family: 'Bangers', 'Comic Neue', sans-serif; letter-spacing: 1px; }
 
         .auth-card {
-            width: 100%; max-width: 420px;
-            background: var(--paper); padding: 40px;
-            border: 4px solid #000; box-shadow: 10px 10px 0px #000;
+            width: 100%; max-width: 440px;
+            background-color: var(--paper);
+            background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1.5px, transparent 1.5px);
+            background-size: 12px 12px;
+            padding: 42px 38px;
+            border: 4px solid #fff;
+            outline: 3px solid #000;
+            box-shadow: 12px 12px 0px #000, 16px 16px 0px var(--blue);
             position: relative;
             margin: 40px 0;
         }
 
         .auth-card::before {
-
-            content: "";
-            position: absolute; top: -14px; left: 30px;
-            width: 60px; height: 28px;
+            content: "★ NEW HERO ORIGIN ★";
+            position: absolute; top: -18px; left: 24px;
+            font-family: 'Bangers', sans-serif;
+            font-size: 0.9rem;
+            letter-spacing: 1.5px;
+            color: #000;
+            padding: 2px 12px;
             background: var(--blue);
             border: 3px solid #000;
-            transform: rotate(-3deg);
+            box-shadow: 3px 3px 0px #000;
+            transform: rotate(-2deg);
         }
 
-        h2 { color: var(--red); font-size: 2.4rem; -webkit-text-stroke: 1px #000; }
-        h5 { color: var(--yellow); font-size: 1.2rem; }
+        h2 { color: var(--yellow); font-size: 3.2rem; -webkit-text-stroke: 2px #000; text-shadow: 4px 4px 0 #000, 6px 6px 0 var(--red); }
+        h5 { color: #fff; font-size: 1.4rem; letter-spacing: 1.5px; text-shadow: 2px 2px 0 #000; }
 
         label { color: #bbb; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
 

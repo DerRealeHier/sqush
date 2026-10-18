@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sqush-games-quota",
+  "main": "src/index.js",
+  "compatibility_date": "2025-05-01",
+  "observability": {
+    "enabled": true
+  },
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "sqush-games"
+    }
+  ],
+  // Optional: KV namespace for high-performance O(1) running total.
+  // To enable, create a namespace with: npx wrangler kv namespace create QUOTA_KV
+  // and uncomment the lines below with your namespace id:
+  // "kv_namespaces": [
+  //   {
+  //     "binding": "QUOTA_KV",
+  //     "id": "<YOUR_KV_NAMESPACE_ID>"
+  //   }
+  // ],
+  "vars": {
+    // Bucket limit in bytes (5 GiB default = 5 * 1024 * 1024 * 1024)
+    "MAX_BYTES": "5368709120",
+    // Optional: set an auth token secret (or via `wrangler secret put AUTH_TOKEN`) to protect PUT/DELETE endpoints
+    "REQUIRE_AUTH": "false"
+  }
+}

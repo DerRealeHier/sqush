@@ -26,7 +26,9 @@ R2_ACCESS_KEY_ID = os.environ.get("R2_ACCESS_KEY_ID")
 R2_SECRET_ACCESS_KEY = os.environ.get("R2_SECRET_ACCESS_KEY")
 R2_BUCKET_NAME = os.environ.get("R2_BUCKET_NAME")
 R2_PUBLIC_URL = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
-R2_ENABLED = bool(R2_ACCOUNT_ID and R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY and R2_BUCKET_NAME)
+R2_WORKER_URL = os.environ.get("R2_WORKER_URL", "").rstrip("/")
+R2_WORKER_AUTH_KEY = os.environ.get("R2_WORKER_AUTH_KEY", "")
+R2_ENABLED = bool(R2_WORKER_URL or (R2_ACCOUNT_ID and R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY and R2_BUCKET_NAME))
 
 
 def _get_r2_endpoint():

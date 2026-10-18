@@ -121,6 +121,79 @@ class WebSocketMessagesTestCase(unittest.TestCase):
         socket_alice.disconnect()
         socket_bob.disconnect()
 
+    def test_send_bundle_message_and_formatting(self):
+        from models.bundle import Bundle
+        from models.game import Game
+
+        with self.app.app_context():
+            game = Game(
+                title="Super Quest",
+                genre="Adventure",
+                tags="Indie",
+                price=19.99,
+                download_path="uploads/fake.zip",
+                developer_id=self.user1_id,
+            )
+            db.session.add(game)
+            db.session.commit()
+
+            bundle = Bundle(
+                title="Adventure Mega Pack",
+                owner_id=self.user1_id,
+                discount_percent=20,
+                is_published=True,
+            )
+            db.session.add(bundle)
+            db.session.commit()
+            bundle_id = bundle.id
+            game_id = game.id
+
+        client_alice = self.app.test_client()
+        client_alice.post("/login", data={"username": "alice", "password": "Password123!"}, follow_redirects=True)
+
+        client_bob = self.app.test_client()
+        client_bob.post("/login", data={"username": "bob", "password": "Password123!"}, follow_redirects=True)
+
+        socket_alice = socketio.test_client(self.app, flask_test_client=client_alice)
+        socket_bob = socketio.test_client(self.app, flask_test_client=client_bob)
+
+        # Alice sends message referencing a bundle with a multi-line message and game link
+        multiline_content = f"Check this out!\nCheck game: /game/{game_id}\nAnd bundle: /bundle/{bundle_id}"
+        res = socket_alice.emit("send_direct_message", {
+            "recipient_id": self.user2_id,
+            "content": multiline_content,
+            "bundle_id": bundle_id,
+        }, callback=True)
+
+        self.assertEqual(res.get("status"), "success")
+        msg_payload = res.get("message")
+        self.assertEqual(msg_payload.get("bundle_id"), bundle_id)
+        self.assertEqual(msg_payload.get("bundle_title"), "Adventure Mega Pack")
+
+        # Bob receives message with bundle info
+        received_bob = socket_bob.get_received()
+        new_msgs = [e for e in received_bob if e["name"] == "new_message"]
+        self.assertEqual(len(new_msgs), 1)
+        self.assertEqual(new_msgs[0]["args"][0]["bundle_id"], bundle_id)
+        self.assertEqual(new_msgs[0]["args"][0]["bundle_title"], "Adventure Mega Pack")
+
+        # Test format_chat template filter
+        with self.app.app_context():
+            from routes.messages import format_chat_filter
+            formatted = format_chat_filter(multiline_content)
+            # Verify <br> for newline
+            self.assertIn("<br>", formatted)
+            # Verify game link generated with title
+            self.assertIn(f'/game/{game_id}', formatted)
+            self.assertIn("Super Quest", formatted)
+            # Verify bundle link generated with title
+            self.assertIn(f'/bundle/{bundle_id}', formatted)
+            self.assertIn("Adventure Mega Pack", formatted)
+
+        socket_alice.disconnect()
+        socket_bob.disconnect()
+
 
 if __name__ == "__main__":
     unittest.main()
+

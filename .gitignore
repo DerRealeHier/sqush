@@ -49,6 +49,11 @@ instance/
 .vscode/
 *.swp
 *.swo
+*.patch
+
+# Node / Cloudflare Workers
+node_modules/
+.wrangler/
 
 # Operating System files
 .DS_Store

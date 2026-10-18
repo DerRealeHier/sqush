@@ -182,14 +182,23 @@
                     </div>
                 </div>
 
-                <!-- Optional Attached Game Context Banner -->
+                <!-- Optional Attached Game/Bundle Context Banner -->
                 {% if active_game %}
-                <div class="game-context-banner alert alert-secondary d-flex align-items-center justify-content-between py-2 mb-3">
+                <div class="game-context-banner alert alert-secondary d-flex align-items-center justify-content-between py-2 mb-3" style="border: 2px solid #000; box-shadow: 3px 3px 0 #000;">
                     <div>
                         <strong>Inquiring about game:</strong>
                         <a href="{{ url_for('game_detail', game_id=active_game.id) }}" class="ms-1 fw-bold text-decoration-none">{{ active_game.title }}</a>
                     </div>
                     <small class="text-muted">{{ active_game.genre }}</small>
+                </div>
+                {% endif %}
+                {% if active_bundle %}
+                <div class="bundle-context-banner alert alert-warning d-flex align-items-center justify-content-between py-2 mb-3" style="border: 2px solid #000; box-shadow: 3px 3px 0 #000;">
+                    <div>
+                        <strong>Inquiring about bundle:</strong>
+                        <a href="{{ url_for('bundle_detail', bundle_id=active_bundle.id) }}" class="ms-1 fw-bold text-decoration-none text-dark">{{ active_bundle.title }}</a>
+                    </div>
+                    <small class="badge bg-dark">{{ active_bundle.games|length }} Games</small>
                 </div>
                 {% endif %}
 
@@ -204,9 +213,14 @@
                             </div>
 
                             {% if msg.game %}
-                            <div class="message-game-tag small badge bg-dark mb-1 d-block text-start">
-                                Regarding: {{ msg.game.title }}
-                            </div>
+                            <a href="{{ url_for('game_detail', game_id=msg.game.id) }}" target="_blank" class="message-game-tag small badge bg-dark text-warning mb-1 d-inline-flex align-items-center gap-1 text-decoration-none border border-secondary" title="View Game">
+                                <i class="bi bi-controller text-warning"></i> Regarding: {{ msg.game.title }} <i class="bi bi-box-arrow-up-right small"></i>
+                            </a>
+                            {% endif %}
+                            {% if msg.bundle %}
+                            <a href="{{ url_for('bundle_detail', bundle_id=msg.bundle.id) }}" target="_blank" class="message-bundle-tag small badge bg-warning text-dark mb-1 d-inline-flex align-items-center gap-1 text-decoration-none border border-dark" title="View Bundle">
+                                <i class="bi bi-box-seam-fill me-1"></i> Regarding: {{ msg.bundle.title }} <i class="bi bi-box-arrow-up-right small"></i>
+                            </a>
                             {% endif %}
 
                             {% if msg.trade %}
@@ -281,8 +295,8 @@
                                 {% endif %}
                             </div>
                             {% else %}
-                            <div class="message-content text-break">
-                                {{ msg.content }}
+                            <div class="message-content text-break" style="white-space: pre-wrap; word-break: break-word;">
+                                {{ msg.content | format_chat }}
                             </div>
                             {% endif %}
 
@@ -317,9 +331,20 @@
                     {% if active_game %}
                     <input type="hidden" name="game_id" value="{{ active_game.id }}">
                     {% endif %}
+                    {% if active_bundle %}
+                    <input type="hidden" name="bundle_id" value="{{ active_bundle.id }}">
+                    {% endif %}
+
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <small class="text-muted"><i class="bi bi-keyboard me-1"></i><strong>Enter</strong> to send, <strong>Shift+Enter</strong> for line break</small>
+                        <button type="button" class="btn btn-sm btn-outline-dark fw-bold" data-bs-toggle="modal" data-bs-target="#linkGameBundleModal" style="border: 2px solid #000; font-family:'Bangers',sans-serif; letter-spacing:0.5px;">
+                            <i class="bi bi-link-45deg text-primary"></i> LINK GAME / BUNDLE
+                        </button>
+                    </div>
+
                     <div class="d-flex gap-2">
-                        <textarea name="content" id="messageContentInput" class="form-control" rows="2" placeholder="Write your message..." required></textarea>
-                        <button type="submit" id="messageSendBtn" class="btn btn-primary px-4">Send</button>
+                        <textarea name="content" id="messageContentInput" class="form-control" rows="2" placeholder="Write your message... (Shift+Enter for newline)" required style="border: 2px solid #000; min-height: 52px;"></textarea>
+                        <button type="submit" id="messageSendBtn" class="btn btn-primary px-4 fw-bold" style="font-family:'Bangers',sans-serif; font-size:1.2rem; letter-spacing:1px; border:2px solid #000; box-shadow: 2px 2px 0 #000;">SEND</button>
                     </div>
                 </form>
             </div>
@@ -401,6 +426,100 @@
         </div>
     </div>
 </div>
+<!-- Link Game or Bundle Modal -->
+<div class="modal fade" id="linkGameBundleModal" tabindex="-1" aria-labelledby="linkGameBundleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border: 4px solid #000; box-shadow: 8px 8px 0 #000;">
+            <div class="modal-header" style="background: var(--yellow,#ffe14d); border-bottom: 3px solid #000;">
+                <h5 class="modal-title fw-bold" id="linkGameBundleModalLabel" style="font-family:'Bangers',sans-serif; letter-spacing:1px;">
+                    <i class="bi bi-link-45deg me-1"></i> LINK A GAME OR BUNDLE
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3">
+                <ul class="nav nav-pills mb-3 nav-justified" id="linkPickerTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold" id="picker-games-tab" data-bs-toggle="pill" data-bs-target="#picker-games" type="button" role="tab" style="border: 2px solid #000;">
+                            <i class="bi bi-controller me-1"></i> Games ({{ all_games|length if all_games else 0 }})
+                        </button>
+                    </li>
+                    <li class="nav-item ms-2" role="presentation">
+                        <button class="nav-link fw-bold" id="picker-bundles-tab" data-bs-toggle="pill" data-bs-target="#picker-bundles" type="button" role="tab" style="border: 2px solid #000;">
+                            <i class="bi bi-box-seam-fill me-1"></i> Bundles ({{ all_bundles|length if all_bundles else 0 }})
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="linkPickerTabContent">
+                    <!-- Games Tab -->
+                    <div class="tab-pane fade show active" id="picker-games" role="tabpanel">
+                        <input type="text" id="gamePickerSearch" class="form-control mb-2" placeholder="Search games..." style="border: 2px solid #000;">
+                        <div class="list-group link-items-list" id="gamesPickerList" style="max-height: 280px; overflow-y: auto;">
+                            {% if all_games %}
+                            {% for g in all_games %}
+                            <div class="list-group-item d-flex align-items-center justify-content-between p-2 picker-item-row" data-title="{{ g.title|lower }}">
+                                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                    {% if g.image_path %}
+                                    <img src="{{ url_for('static', filename=g.image_path) }}" alt="{{ g.title }}" class="rounded" style="width: 38px; height: 38px; object-fit: cover; border: 1px solid #000;">
+                                    {% else %}
+                                    <div class="bg-secondary rounded d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; border: 1px solid #000;">
+                                        <i class="bi bi-controller text-white"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div class="text-truncate">
+                                        <span class="fw-bold d-block text-truncate">{{ g.title }}</span>
+                                        <small class="text-muted">{{ "%.2f"|format(g.price) }}€</small>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-dark fw-bold insert-link-btn" data-link="/game/{{ g.id }}" style="border: 1px solid #000; font-family:'Bangers',sans-serif;">
+                                    <i class="bi bi-plus-circle me-1"></i> INSERT
+                                </button>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class="text-muted text-center py-3">No games found.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Bundles Tab -->
+                    <div class="tab-pane fade" id="picker-bundles" role="tabpanel">
+                        <input type="text" id="bundlePickerSearch" class="form-control mb-2" placeholder="Search bundles..." style="border: 2px solid #000;">
+                        <div class="list-group link-items-list" id="bundlesPickerList" style="max-height: 280px; overflow-y: auto;">
+                            {% if all_bundles %}
+                            {% for b in all_bundles %}
+                            <div class="list-group-item d-flex align-items-center justify-content-between p-2 picker-item-row" data-title="{{ b.title|lower }}">
+                                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                    {% if b.image_path %}
+                                    <img src="{{ url_for('static', filename=b.image_path) }}" alt="{{ b.title }}" class="rounded" style="width: 38px; height: 38px; object-fit: cover; border: 1px solid #000;">
+                                    {% else %}
+                                    <div class="bg-warning rounded d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; border: 1px solid #000;">
+                                        <i class="bi bi-box-seam-fill text-dark"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div class="text-truncate">
+                                        <span class="fw-bold d-block text-truncate">{{ b.title }}</span>
+                                        <small class="text-muted">{{ b.games|length }} Games - {{ "%.2f"|format(b.display_price) }}€</small>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-warning fw-bold insert-link-btn" data-link="/bundle/{{ b.id }}" style="border: 1px solid #000; font-family:'Bangers',sans-serif;">
+                                    <i class="bi bi-plus-circle me-1"></i> INSERT
+                                </button>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class="text-muted text-center py-3">No bundles found.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 3px solid #000;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -421,12 +540,39 @@
         const activePartnerUsername = {{ active_partner.username|tojson if active_partner else 'null' }};
         const activeGameId = {{ active_game.id if active_game else 'null' }};
         const activeGameTitle = {{ active_game.title|tojson if active_game else 'null' }};
+        const activeBundleId = {{ active_bundle.id if active_bundle else 'null' }};
+        const activeBundleTitle = {{ active_bundle.title|tojson if active_bundle else 'null' }};
 
         function escapeHtml(str) {
             if (!str) return '';
             const div = document.createElement('div');
             div.textContent = str;
             return div.innerHTML;
+        }
+
+        function formatChatContent(rawText) {
+            if (!rawText) return '';
+            let escaped = escapeHtml(rawText);
+
+            // 1. Replace Game links (/game/123 or https://.../game/123)
+            escaped = escaped.replace(/(?:https?:\/\/[^\/\s]+)?\/game\/(\d+)\b/g, function(match, id) {
+                return '<a href="/game/' + id + '" target="_blank" class="comic-chat-link comic-game-link text-decoration-none badge bg-dark text-warning p-1 px-2 border border-secondary my-1 d-inline-flex align-items-center gap-1"><i class="bi bi-controller text-warning"></i> View Game #' + id + ' <i class="bi bi-box-arrow-up-right small"></i></a>';
+            });
+
+            // 2. Replace Bundle links (/bundle/123 or https://.../bundle/123)
+            escaped = escaped.replace(/(?:https?:\/\/[^\/\s]+)?\/bundle\/(\d+)\b/g, function(match, id) {
+                return '<a href="/bundle/' + id + '" target="_blank" class="comic-chat-link comic-bundle-link text-decoration-none badge bg-warning text-dark p-1 px-2 border border-dark my-1 d-inline-flex align-items-center gap-1"><i class="bi bi-box-seam-fill"></i> View Bundle #' + id + ' <i class="bi bi-box-arrow-up-right small"></i></a>';
+            });
+
+            // 3. Generic URLs that are not already in href
+            escaped = escaped.replace(/(^|[^"])((https?:\/\/)[^\s<]+)/g, function(match, prefix, url) {
+                return prefix + '<a href="' + url + '" target="_blank" rel="noopener noreferrer" class="text-decoration-underline text-info">' + url + '</a>';
+            });
+
+            // 4. Newlines to <br>
+            escaped = escaped.replace(/\r\n/g, '<br>').replace(/\n/g, '<br>');
+
+            return escaped;
         }
 
         // 1. Mark conversation as read on load & window focus
@@ -442,11 +588,78 @@
         const contentInput = document.getElementById('messageContentInput');
         const typingIndicator = document.getElementById('typingIndicator');
 
+        function submitChatForm() {
+            if (!contentInput || !activePartnerId) return;
+            const text = contentInput.value.trim();
+            if (!text) return;
+
+            contentInput.value = '';
+            contentInput.style.height = 'auto';
+            contentInput.focus();
+
+            socket.emit('stop_typing', { recipient_id: activePartnerId });
+
+            const payload = {
+                recipient_id: activePartnerId,
+                content: text,
+                game_id: activeGameId,
+                bundle_id: activeBundleId
+            };
+
+            if (socket && socket.connected) {
+                socket.emit('send_direct_message', payload, function(res) {
+                    if (res && res.status === 'error') {
+                        alert(res.error || 'Failed to send message.');
+                    }
+                });
+            } else {
+                // Fallback to HTTP POST
+                const formData = new FormData();
+                formData.append('recipient_id', activePartnerId);
+                formData.append('content', text);
+                if (activeGameId) formData.append('game_id', activeGameId);
+                if (activeBundleId) formData.append('bundle_id', activeBundleId);
+
+                fetch('{{ url_for("messages.send_message") }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.status === 'success') {
+                        appendMessageBubble({
+                            id: data.message_id,
+                            sender_id: currentUserId,
+                            sender_username: '{{ current_user.username }}',
+                            content: data.content,
+                            created_at: data.created_at,
+                            time: data.created_at,
+                            is_read: false,
+                            game_id: data.game_id,
+                            game_title: data.game_title,
+                            bundle_id: data.bundle_id,
+                            bundle_title: data.bundle_title
+                        }, true);
+                        updateSidebar(activePartnerId, activePartnerUsername, data.content, data.created_at, false);
+                    }
+                })
+                .catch(err => {
+                    console.error('Message HTTP fallback error:', err);
+                });
+            }
+        }
+
         if (chatForm && contentInput) {
             contentInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === 'Enter') {
+                    if (e.shiftKey) {
+                        // Shift + Enter: allow newline in textarea
+                        return;
+                    }
+                    // Enter alone: send message
                     e.preventDefault();
-                    chatForm.requestSubmit();
+                    submitChatForm();
                 }
             });
 
@@ -462,23 +675,47 @@
 
             chatForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                const text = contentInput.value.trim();
-                if (!text || !activePartnerId) return;
+                submitChatForm();
+            });
+        }
 
-                socket.emit('stop_typing', { recipient_id: activePartnerId });
-
-                socket.emit('send_direct_message', {
-                    recipient_id: activePartnerId,
-                    content: text,
-                    game_id: activeGameId
-                }, function(res) {
-                    if (res && res.status === 'error') {
-                        alert(res.error || 'Failed to send message.');
+        // Link Game / Bundle modal insert buttons
+        document.querySelectorAll('.insert-link-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const link = btn.getAttribute('data-link');
+                if (link && contentInput) {
+                    const currentVal = contentInput.value;
+                    contentInput.value = currentVal ? (currentVal + ' ' + link) : link;
+                    const modalEl = document.getElementById('linkGameBundleModal');
+                    if (modalEl && window.bootstrap) {
+                        const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                        modalInstance.hide();
                     }
-                });
+                    contentInput.focus();
+                }
+            });
+        });
 
-                contentInput.value = '';
-                contentInput.focus();
+        // Search in modal
+        const gameSearch = document.getElementById('gamePickerSearch');
+        if (gameSearch) {
+            gameSearch.addEventListener('input', function() {
+                const q = this.value.toLowerCase().trim();
+                document.querySelectorAll('#gamesPickerList .picker-item-row').forEach(function(row) {
+                    const title = row.getAttribute('data-title') || '';
+                    row.style.display = title.includes(q) ? 'flex' : 'none';
+                });
+            });
+        }
+
+        const bundleSearch = document.getElementById('bundlePickerSearch');
+        if (bundleSearch) {
+            bundleSearch.addEventListener('input', function() {
+                const q = this.value.toLowerCase().trim();
+                document.querySelectorAll('#bundlesPickerList .picker-item-row').forEach(function(row) {
+                    const title = row.getAttribute('data-title') || '';
+                    row.style.display = title.includes(q) ? 'flex' : 'none';
+                });
             });
         }
 
@@ -496,8 +733,14 @@
             row.className = 'message-row mb-3 d-flex ' + (isSelf ? 'justify-content-end' : 'justify-content-start');
 
             let gameHtml = '';
-            if (data.game_title) {
-                gameHtml = '<div class="message-game-tag small badge bg-dark mb-1 d-block text-start">Regarding: ' + escapeHtml(data.game_title) + '</div>';
+            if (data.game_id && data.game_title) {
+                gameHtml = '<a href="/game/' + data.game_id + '" target="_blank" class="message-game-tag small badge bg-dark text-warning mb-1 d-inline-flex align-items-center gap-1 text-decoration-none border border-secondary"><i class="bi bi-controller text-warning"></i> Regarding: ' + escapeHtml(data.game_title) + ' <i class="bi bi-box-arrow-up-right small"></i></a>';
+            } else if (data.game_title) {
+                gameHtml = '<div class="message-game-tag small badge bg-dark text-warning mb-1 d-block text-start">Regarding: ' + escapeHtml(data.game_title) + '</div>';
+            } else if (data.bundle_id && data.bundle_title) {
+                gameHtml = '<a href="/bundle/' + data.bundle_id + '" target="_blank" class="message-bundle-tag small badge bg-warning text-dark mb-1 d-inline-flex align-items-center gap-1 text-decoration-none border border-dark"><i class="bi bi-box-seam-fill"></i> Regarding: ' + escapeHtml(data.bundle_title) + ' <i class="bi bi-box-arrow-up-right small"></i></a>';
+            } else if (data.bundle_title) {
+                gameHtml = '<div class="message-bundle-tag small badge bg-warning text-dark mb-1 d-block text-start">Regarding: ' + escapeHtml(data.bundle_title) + '</div>';
             }
 
             const statusHtml = isSelf
@@ -511,8 +754,8 @@
                         '<span class="message-time">' + escapeHtml(data.created_at || data.time) + '</span>' +
                     '</div>' +
                     gameHtml +
-                    '<div class="message-content text-break">' +
-                        escapeHtml(data.content) +
+                    '<div class="message-content text-break" style="white-space: pre-wrap; word-break: break-word;">' +
+                        formatChatContent(data.content) +
                     '</div>' +
                     '<div class="message-footer mt-1 d-flex justify-content-between align-items-center small">' +
                         statusHtml +

@@ -6,81 +6,100 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='CSS/style.css') }}">
     <script src="https://js.stripe.com/v3/"></script>
     <style>
         .cart-item-card {
-            background: #fff;
+            background-color: var(--paper-card, #fffdf5);
+            background-image: radial-gradient(rgba(0, 0, 0, 0.055) 1.5px, transparent 1.5px);
+            background-size: 10px 10px;
             border: 4px solid #000;
-            box-shadow: 8px 8px 0px #000;
+            box-shadow: 8px 8px 0px #000, 11px 11px 0px var(--yellow);
             margin-bottom: 1.5rem;
             color: #000;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: transform 0.16s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.16s ease;
             overflow: hidden;
         }
         .cart-item-card:hover {
-            transform: translate(-4px, -4px);
-            box-shadow: 12px 12px 0px #000;
+            transform: translate(-4px, -4px) rotate(-0.5deg);
+            box-shadow: 12px 12px 0px #000, 15px 15px 0px var(--blue);
         }
         .cart-item-img {
-            width: 130px;
-            height: 130px;
+            width: 135px;
+            height: 135px;
             object-fit: cover;
             border-right: 4px solid #000;
             flex-shrink: 0;
         }
         .cart-item-title {
-            font-weight: 900;
-            font-size: 1.3rem;
+            font-family: 'Bangers', Impact, sans-serif;
+            letter-spacing: 1.2px;
+            font-size: 1.65rem;
             text-transform: uppercase;
             color: #000;
         }
         .cart-item-price {
-            font-weight: 900;
-            font-size: 1.4rem;
-            color: #4caf50;
-            text-shadow: 1px 1px 0px #000;
+            font-family: 'Bangers', Impact, sans-serif;
+            letter-spacing: 1px;
+            font-size: 1.45rem;
+            color: #000;
+            background: var(--green);
+            border: 2.5px solid #000;
+            box-shadow: 3px 3px 0px #000;
+            padding: 2px 10px;
+            display: inline-block;
+            transform: rotate(-1.5deg);
         }
         .cart-summary-card {
-            background: #fff;
+            background-color: var(--paper-card, #fffdf5);
+            background-image: radial-gradient(rgba(0, 0, 0, 0.055) 1.5px, transparent 1.5px);
+            background-size: 10px 10px;
             border: 4px solid #000;
-            box-shadow: 8px 8px 0px #000;
+            box-shadow: 10px 10px 0px #000, 14px 14px 0px var(--green);
             color: #000;
             position: sticky;
             top: 20px;
         }
         .cart-summary-title {
-            font-weight: 900;
-            font-size: 1.5rem;
+            font-family: 'Bangers', Impact, sans-serif;
+            letter-spacing: 1.5px;
+            font-size: 1.85rem;
             text-transform: uppercase;
             border-bottom: 4px solid #000;
             padding-bottom: 0.75rem;
             margin-bottom: 1.25rem;
         }
         .cart-total-label {
-            font-size: 1.2rem;
-            font-weight: 900;
+            font-family: 'Bangers', Impact, sans-serif;
+            letter-spacing: 1px;
+            font-size: 1.4rem;
             text-transform: uppercase;
         }
         .cart-total-value {
-            font-weight: 900;
-            font-size: 1.8rem;
-            color: #4caf50;
-            text-shadow: 1px 1px 0px #000;
+            font-family: 'Bangers', Impact, sans-serif;
+            letter-spacing: 1px;
+            font-size: 2.1rem;
+            color: #000;
+            background: var(--yellow);
+            border: 3px solid #000;
+            box-shadow: 3px 3px 0px #000;
+            padding: 2px 12px;
         }
         .btn-cart-checkout {
-            background: #4caf50 !important;
+            background: var(--green) !important;
             color: #000 !important;
             border: 4px solid #000 !important;
             box-shadow: 6px 6px 0px #000;
-            font-weight: 900;
-            font-size: 1.4rem;
+            font-family: 'Bangers', Impact, sans-serif;
+            font-size: 1.65rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.15s ease;
+            letter-spacing: 2px;
+            border-radius: 0;
+            transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .btn-cart-checkout:hover {
-            background: #33d17a !important;
+            background: var(--yellow) !important;
             transform: translate(-3px, -3px);
             box-shadow: 9px 9px 0px #000;
         }
@@ -89,18 +108,21 @@
             box-shadow: 3px 3px 0px #000;
         }
         .btn-remove {
-            background: #ff3b30 !important;
+            background: var(--red) !important;
             color: #fff !important;
             border: 3px solid #000 !important;
             box-shadow: 4px 4px 0px #000;
-            font-weight: 900;
-            font-size: 0.9rem;
+            font-family: 'Bangers', sans-serif;
+            letter-spacing: 1px;
+            font-size: 1.05rem;
             text-transform: uppercase;
+            border-radius: 0;
             transition: all 0.15s ease;
             flex-shrink: 0;
         }
         .btn-remove:hover {
             background: #000 !important;
+            color: var(--yellow) !important;
             transform: translate(-2px, -2px);
             box-shadow: 6px 6px 0px #000;
         }
@@ -109,32 +131,39 @@
             box-shadow: 2px 2px 0px #000;
         }
         .bundle-warning {
-            background: #ffe14d;
+            background-color: var(--yellow);
+            background-image: radial-gradient(rgba(0, 0, 0, 0.06) 1.5px, transparent 1.5px);
+            background-size: 10px 10px;
             border: 4px solid #000;
-            box-shadow: 8px 8px 0px #000;
+            box-shadow: 8px 8px 0px #000, 11px 11px 0px var(--red);
             color: #000;
         }
         .bundle-warning h3 {
-            font-weight: 900;
+            font-family: 'Bangers', Impact, sans-serif;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
-            font-size: 1.3rem;
+            font-size: 1.6rem;
         }
         .cart-empty-box {
-            background: #fff;
+            background-color: var(--paper-card, #fffdf5);
+            background-image: radial-gradient(rgba(0, 0, 0, 0.055) 1.5px, transparent 1.5px);
+            background-size: 10px 10px;
             border: 4px solid #000;
-            box-shadow: 8px 8px 0px #000;
+            box-shadow: 10px 10px 0px #000, 14px 14px 0px var(--yellow);
             color: #000;
         }
         .cart-item-count-badge {
-            background: #2196f3;
-            color: #fff;
-            border: 2px solid #000;
-            font-weight: 900;
-            font-size: 0.75rem;
+            background: var(--blue);
+            color: #000;
+            border: 3px solid #000;
+            font-family: 'Bangers', sans-serif;
+            letter-spacing: 1.2px;
+            font-size: 1rem;
             text-transform: uppercase;
-            padding: 2px 8px;
-            box-shadow: 2px 2px 0px #000;
+            padding: 3px 12px;
+            box-shadow: 3px 3px 0px #000;
             display: inline-block;
+            transform: rotate(-1.5deg);
         }
     </style>
 </head>

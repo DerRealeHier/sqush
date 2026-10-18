@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from flask import Flask, redirect, url_for, flash, request, session
 from flask_login import current_user
 import config
@@ -375,6 +376,8 @@ with app.app_context():
             dm_cols = [c["name"] for c in inspector.get_columns("direct_message")]
             if "trade_id" not in dm_cols:
                 db.session.execute(text("ALTER TABLE direct_message ADD COLUMN trade_id INTEGER REFERENCES card_trade(id)"))
+            if "bundle_id" not in dm_cols:
+                db.session.execute(text("ALTER TABLE direct_message ADD COLUMN bundle_id INTEGER REFERENCES bundle(id)"))
 
         if "review" in table_names:
             rev_cols = [c["name"] for c in inspector.get_columns("review")]
@@ -419,6 +422,7 @@ with app.app_context():
                 ("idx_user_ban_user", "user_ban", "user_id"),
                 ("idx_user_ban_email", "user_ban", "email"),
                 ("idx_user_ban_active", "user_ban", "is_active"),
+                ("idx_message_bundle", "direct_message", "bundle_id"),
         ]
         for idx_name, tbl, col in indexes:
             try:
@@ -439,4 +443,4 @@ with app.app_context():
 
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True)
+    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)

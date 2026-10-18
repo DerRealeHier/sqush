@@ -400,6 +400,14 @@
                 <span>ROADMAP</span>
             </a>
 
+            <button type="button"
+                    class="action-pill-btn"
+                    onclick="navigator.clipboard.writeText(window.location.origin + '/game/{{ game.id }}').then(() => alert('Game link copied to clipboard!'))"
+                    title="Copy game link to clipboard">
+                <i class="bi bi-share-fill text-primary"></i>
+                <span>SHARE</span>
+            </button>
+
             {% if current_user.is_authenticated %}
             <a href="{{ url_for('gift_page', game_id=game.id) }}"
                class="action-pill-btn"

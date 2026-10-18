@@ -47,9 +47,19 @@
             <p class="text-white-50 mb-0">Sqush Game Bundle</p>
         </div>
 
-        <a class="btn edit-btn" href="{{ url_for('store_front') }}">
-            <i class="bi bi-arrow-left"></i> BACK TO STORE
-        </a>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn edit-btn" onclick="navigator.clipboard.writeText(window.location.origin + '/bundle/{{ bundle.id }}').then(() => alert('Bundle link copied to clipboard!'))" title="Copy bundle link">
+                <i class="bi bi-share-fill"></i> SHARE
+            </button>
+            {% if current_user.is_authenticated and current_user.id != bundle.owner_id %}
+            <a class="btn edit-btn" href="{{ url_for('messages.conversation', username=bundle.owner.username, bundle_id=bundle.id) }}" title="Message the bundle creator">
+                <i class="bi bi-chat-left-text-fill text-info"></i> MESSAGE CREATOR
+            </a>
+            {% endif %}
+            <a class="btn edit-btn" href="{{ url_for('store_front') }}">
+                <i class="bi bi-arrow-left"></i> BACK TO STORE
+            </a>
+        </div>
     </div>
 
     <div class="row g-4">

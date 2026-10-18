@@ -36,6 +36,32 @@ def get_r2_client():
 
 
 def upload_to_r2(file_stream, key, content_type=None):
+    if getattr(config, "R2_WORKER_URL", None):
+        import requests
+        try:
+            file_stream.seek(0, os.SEEK_END)
+            size = file_stream.tell()
+            file_stream.seek(0)
+
+            headers = {
+                "Content-Length": str(size),
+            }
+            if content_type:
+                headers["Content-Type"] = content_type
+            if getattr(config, "R2_WORKER_AUTH_KEY", None):
+                headers["Authorization"] = f"Bearer {config.R2_WORKER_AUTH_KEY}"
+
+            target_url = f"{config.R2_WORKER_URL.rstrip('/')}/{key.lstrip('/')}"
+            resp = requests.put(target_url, data=file_stream, headers=headers, timeout=60)
+            if resp.status_code in (200, 201):
+                return True
+            else:
+                print(f"DEBUG: R2 Worker upload failed ({resp.status_code}): {resp.text}")
+                return False
+        except Exception as e:
+            print(f"DEBUG: R2 Worker upload error for {key}: {e}")
+            return False
+
     client = get_r2_client()
     if client is None:
         return False

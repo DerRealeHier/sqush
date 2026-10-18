@@ -1,3 +1,5 @@
+import re
+from markupsafe import Markup, escape
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import current_user, login_required
 from flask_socketio import emit, join_room, leave_room
@@ -5,6 +7,7 @@ from sqlalchemy import or_, and_
 from extensions import db, socketio
 from models.user import User, Notification
 from models.game import Game
+from models.bundle import Bundle
 from models.message import DirectMessage
 from models.card import CardTrade
 from services.card_service import (
@@ -16,6 +19,52 @@ from services.card_service import (
 )
 
 messages_bp = Blueprint("messages", __name__)
+
+
+@messages_bp.app_template_filter("format_chat")
+def format_chat_filter(text):
+    if not text:
+        return ""
+    # 1. Escape user input first to prevent XSS
+    escaped = str(escape(text))
+
+    # Helper to replace game links
+    def replace_game_link(match):
+        game_id = match.group(1)
+        game = db.session.get(Game, int(game_id))
+        title = escape(game.title) if game else f"Game #{game_id}"
+        price_badge = f'<span class="badge bg-secondary ms-1">{game.price:.2f}€</span>' if game else ""
+        return (
+            f'<a href="/game/{game_id}" target="_blank" '
+            f'class="comic-chat-link comic-game-link text-decoration-none badge bg-dark text-warning p-1 px-2 border border-secondary my-1 d-inline-flex align-items-center gap-1">'
+            f'<i class="bi bi-controller text-warning"></i> {title} {price_badge} <i class="bi bi-box-arrow-up-right small"></i></a>'
+        )
+
+    # Helper to replace bundle links
+    def replace_bundle_link(match):
+        bundle_id = match.group(1)
+        bundle = db.session.get(Bundle, int(bundle_id))
+        title = escape(bundle.title) if bundle else f"Bundle #{bundle_id}"
+        price_badge = f'<span class="badge bg-dark text-warning ms-1">{bundle.display_price:.2f}€</span>' if bundle else ""
+        return (
+            f'<a href="/bundle/{bundle_id}" target="_blank" '
+            f'class="comic-chat-link comic-bundle-link text-decoration-none badge bg-warning text-dark p-1 px-2 border border-dark my-1 d-inline-flex align-items-center gap-1">'
+            f'<i class="bi bi-box-seam-fill"></i> {title} {price_badge} <i class="bi bi-box-arrow-up-right small"></i></a>'
+        )
+
+    # Replace /game/<id> or https?://.../game/<id>
+    escaped = re.sub(r'(?:https?://[^\s/]+)?/game/(\d+)\b', replace_game_link, escaped)
+
+    # Replace /bundle/<id> or https?://.../bundle/<id>
+    escaped = re.sub(r'(?:https?://[^\s/]+)?/bundle/(\d+)\b', replace_bundle_link, escaped)
+
+    # Replace remaining raw URLs (that don't start inside href=")
+    escaped = re.sub(r'(?<!href=")(https?://[^\s<]+)', r'<a href="\1" target="_blank" rel="noopener noreferrer" class="text-decoration-underline text-info">\1</a>', escaped)
+
+    # Turn newlines into <br> tags
+    escaped = escaped.replace("\r\n", "<br>").replace("\n", "<br>")
+
+    return Markup(escaped)
 
 
 # grab all chats for this user (:
@@ -56,25 +105,33 @@ def inbox():
     conversations = get_user_conversations(current_user.id)
     target_username = request.args.get("to")
     game_id = request.args.get("game_id", type=int)
+    bundle_id = request.args.get("bundle_id", type=int)
 
     active_game = db.session.get(Game, game_id) if game_id else None
+    active_bundle = db.session.get(Bundle, bundle_id) if bundle_id else None
 
     if target_username:
         active_partner = User.query.filter_by(username=target_username).first()
         if active_partner and active_partner.id != current_user.id:
-            return redirect(url_for("messages.conversation", username=active_partner.username, game_id=game_id))
+            return redirect(url_for("messages.conversation", username=active_partner.username, game_id=game_id, bundle_id=bundle_id))
 
     # open first chat so user doesn't stare into the void (:
     if conversations:
         first_user = conversations[0]["user"]
         return redirect(url_for("messages.conversation", username=first_user.username))
 
+    all_games = Game.query.order_by(Game.title.asc()).all()
+    all_bundles = Bundle.query.filter_by(is_published=True).order_by(Bundle.title.asc()).all()
+
     return render_template(
         "messages.html",
         conversations=conversations,
         active_partner=None,
         messages=[],
-        active_game=active_game
+        active_game=active_game,
+        active_bundle=active_bundle,
+        all_games=all_games,
+        all_bundles=all_bundles,
     )
 
 
@@ -88,7 +145,9 @@ def conversation(username):
         return redirect(url_for("messages.inbox"))
 
     game_id = request.args.get("game_id", type=int)
+    bundle_id = request.args.get("bundle_id", type=int)
     active_game = db.session.get(Game, game_id) if game_id else None
+    active_bundle = db.session.get(Bundle, bundle_id) if bundle_id else None
 
     # marked as read, no more unread badges (:
     DirectMessage.query.filter_by(
@@ -128,6 +187,8 @@ def conversation(username):
 
     user_duplicates = get_user_duplicates(current_user.id)
     all_cards = get_all_card_definitions()
+    all_games = Game.query.order_by(Game.title.asc()).all()
+    all_bundles = Bundle.query.filter_by(is_published=True).order_by(Bundle.title.asc()).all()
 
     return render_template(
         "messages.html",
@@ -135,9 +196,12 @@ def conversation(username):
         active_partner=target_user,
         messages=chat_messages,
         active_game=active_game,
+        active_bundle=active_bundle,
         user_duplicates=user_duplicates,
         all_cards=all_cards,
         get_card_definition=get_card_definition,
+        all_games=all_games,
+        all_bundles=all_bundles,
     )
 
 
@@ -148,6 +212,7 @@ def send_message():
     recipient_id = request.form.get("recipient_id", type=int)
     content = request.form.get("content", "").strip()
     game_id = request.form.get("game_id", type=int)
+    bundle_id = request.form.get("bundle_id", type=int)
 
     if not content:
         flash("Message cannot be empty.", "error")
@@ -163,7 +228,8 @@ def send_message():
         sender_id=current_user.id,
         recipient_id=recipient.id,
         content=content,
-        game_id=game_id
+        game_id=game_id,
+        bundle_id=bundle_id
     )
     db.session.add(new_msg)
 
@@ -191,6 +257,8 @@ def send_message():
         "content": new_msg.content,
         "game_id": new_msg.game_id,
         "game_title": new_msg.game.title if new_msg.game else None,
+        "bundle_id": new_msg.bundle_id,
+        "bundle_title": new_msg.bundle.title if new_msg.bundle else None,
         "created_at": new_msg.created_at.strftime('%d.%m %H:%M'),
         "time": new_msg.created_at.strftime('%H:%M'),
         "is_read": False,
@@ -203,6 +271,10 @@ def send_message():
             "status": "success",
             "message_id": new_msg.id,
             "content": new_msg.content,
+            "game_id": new_msg.game_id,
+            "game_title": new_msg.game.title if new_msg.game else None,
+            "bundle_id": new_msg.bundle_id,
+            "bundle_title": new_msg.bundle.title if new_msg.bundle else None,
             "created_at": new_msg.created_at.strftime("%H:%M")
         })
 
@@ -332,6 +404,12 @@ def handle_socket_send_message(data):
     except (ValueError, TypeError):
         game_id = None
 
+    bundle_id = data.get("bundle_id")
+    try:
+        bundle_id = int(bundle_id) if bundle_id is not None else None
+    except (ValueError, TypeError):
+        bundle_id = None
+
     if not content:
         return {"status": "error", "error": "Message cannot be empty."}
 
@@ -343,7 +421,8 @@ def handle_socket_send_message(data):
         sender_id=current_user.id,
         recipient_id=recipient.id,
         content=content,
-        game_id=game_id
+        game_id=game_id,
+        bundle_id=bundle_id
     )
     db.session.add(new_msg)
 
@@ -370,6 +449,8 @@ def handle_socket_send_message(data):
         "content": new_msg.content,
         "game_id": new_msg.game_id,
         "game_title": new_msg.game.title if new_msg.game else None,
+        "bundle_id": new_msg.bundle_id,
+        "bundle_title": new_msg.bundle.title if new_msg.bundle else None,
         "created_at": new_msg.created_at.strftime('%d.%m %H:%M'),
         "time": new_msg.created_at.strftime('%H:%M'),
         "is_read": False,
