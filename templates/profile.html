@@ -43,7 +43,7 @@
             </a>
 
             <div class="d-flex align-items-center gap-2 ms-1">
-                <img src="{{ url_for('static', filename=current_user.profile_image) }}" class="hud-avatar" alt="{{ current_user.username }}">
+                <img src="{{ url_for('static', filename=current_user.profile_image) }}" class="hud-avatar" alt="{{ current_user.username }}" onerror="this.onerror=null; this.src='/static/avatars/default.png';">
                 <div class="d-flex flex-column">
                     <a href="{{ url_for('profile', username=current_user.username) }}" class="hud-username text-decoration-none text-dark fw-bold">
                         {{ current_user.username }}
@@ -58,7 +58,7 @@
                 <i class="bi bi-cart-fill"></i>
                 <span class="hud-count-badge cart-count-badge {% if cart_count == 0 %}d-none{% endif %}">{{ cart_count }}</span>
             </a>
-            <a href="/login" class="NavBar">LOGIN</a>
+            <a href="/login" class="hud-icon-btn" title="Login"><i class="bi bi-box-arrow-in-right"></i></a>
             {% endif %}
         </div>
     </div>
@@ -100,7 +100,7 @@
         <!-- Avatar with badge-count bubble -->
         <div class="profile-avatar-wrap mb-3 d-inline-block">
             <img src="{{ url_for('static', filename=user.profile_image) }}"
-                 class="profile-avatar-frame" alt="{{ user.username }}">
+                 class="profile-avatar-frame" alt="{{ user.username }}" onerror="this.onerror=null; this.src='/static/avatars/default.png';">
             {% if badges|length > 0 %}
             <span class="profile-avatar-badge-count" title="{{ badges|length }} badge{{ 's' if badges|length != 1 }}">
                 {{ badges|length }}
@@ -313,7 +313,7 @@
             <div class="profile-comment-card">
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <img src="{{ url_for('static', filename=comment.author.profile_image) }}" class="profile-comment-avatar">
+                        <img src="{{ url_for('static', filename=comment.author.profile_image) }}" class="profile-comment-avatar" onerror="this.onerror=null; this.src='/static/avatars/default.png';">
                         <a href="{{ url_for('profile', username=comment.author.username) }}" class="profile-comment-author">
                             {{ comment.author.username }}
                         </a>

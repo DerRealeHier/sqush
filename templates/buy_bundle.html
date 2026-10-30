@@ -227,7 +227,7 @@
     <div class="comic-panel">
         <div class="cover">
             {% if bundle.image_path %}
-            <img src="{{ url_for('static', filename=bundle.image_path) }}" alt="{{ bundle.title }} cover art">
+            <img src="{{ url_for('static', filename=bundle.image_path) }}" alt="{{ bundle.title }} cover art" onerror="this.onerror=null; this.src='/static/images/default_game.png';">
             {% else %}
             <div class="cover-fallback">{{ bundle.title }}</div>
             {% endif %}

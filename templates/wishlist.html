@@ -37,7 +37,7 @@
             </a>
 
             <div class="d-flex align-items-center gap-2 ms-1">
-                <img src="{{ url_for('static', filename=current_user.profile_image) }}" class="hud-avatar" alt="{{ current_user.username }}">
+                <img src="{{ url_for('static', filename=current_user.profile_image) }}" class="hud-avatar" alt="{{ current_user.username }}" onerror="this.onerror=null; this.src=\'/static/avatars/default.png\';">
                 <div class="d-flex flex-column">
                     <a href="{{ url_for('profile', username=current_user.username) }}" class="hud-username text-decoration-none text-dark fw-bold">
                         {{ current_user.username }}
@@ -52,7 +52,7 @@
                 <i class="bi bi-cart-fill"></i>
                 <span class="hud-count-badge cart-count-badge {% if cart_count == 0 %}d-none{% endif %}">{{ cart_count }}</span>
             </a>
-            <a href="/login" class="NavBar">LOGIN</a>
+            <a href="/login" class="hud-icon-btn" title="Login"><i class="bi bi-box-arrow-in-right"></i></a>
             {% endif %}
         </div>
     </div>
@@ -122,7 +122,7 @@
                     {% endif %}
                     {% endif %}
                     <a href="{{ url_for('game_detail', game_id=game.id) }}">
-                        <img src="{{ game.image_path | asset_v }}" class="game-cover-img" alt="{{ game.title }}">
+                        <img src="{{ game.image_path | asset_v }}" class="game-cover-img" alt="{{ game.title }}" onerror="this.onerror=null; this.src='/static/images/default_game.png';">
                     </a>
                 </div>
                 <div class="p-3 text-center">

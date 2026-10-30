@@ -2722,6 +2722,43 @@ body.bundle-dashboard .bundle-stat-box small {
     box-shadow: 2px 2px 0px #000;
 }
 
+
+/* ---- Responsive HUD and Header for mobile screens ---- */
+@media (max-width: 768px) {
+    .user-hud {
+        position: static !important;
+        margin: 0 auto 16px auto !important;
+        max-width: 95% !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        box-shadow: 4px 4px 0px #000, 7px 7px 0px var(--yellow) !important;
+        padding: 6px 10px !important;
+        gap: 6px !important;
+    }
+
+    .bg-image-wrap .container-fluid {
+        justify-content: center !important;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+
+    .hud-avatar {
+        width: 34px !important;
+        height: 34px !important;
+    }
+
+    .hud-username {
+        font-size: 0.8rem !important;
+        padding: 1px 5px !important;
+    }
+
+    .hud-btn-bye {
+        font-size: 0.8rem !important;
+        padding: 2px 7px !important;
+        margin-left: 4px !important;
+    }
+}
+
 /* ---- Responsive stacking for small screens ---- */
 
 @media (max-width: 768px) {
@@ -3265,4 +3302,4 @@ body.bundle-dashboard .bundle-stat-box small {
     border: 4px solid #000 !important;
     border-radius: 0 !important;
     box-shadow: 12px 12px 0px #000 !important;
-}
+}

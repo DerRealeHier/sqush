@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>My Library - Sqush</title>
 
     <link rel="stylesheet"
@@ -324,7 +325,7 @@
         {% set game = item.game %}
         {% set purchase = item.purchase %}
         <div class="library-row mb-5">
-            <img src="{{ url_for('static', filename=game.image_path) }}" class="game-thumb" alt="{{ game.title }}">
+            <img src="{{ url_for('static', filename=game.image_path) }}" class="game-thumb" alt="{{ game.title }}" onerror="this.onerror=null; this.src='/static/images/default_game.png';">
             <div class="library-info flex-grow-1">
                 <div class="library-game-title">{{ game.title }}</div>
                 <span class="comic-badge-tag px-2 py-1">{{ game.genre }}</span>
@@ -433,7 +434,7 @@
                         {% if col_games %}
                         {% for game in col_games %}
                         <div class="col-game-row" id="col-row-{{ col.id }}-{{ game.id }}">
-                            <img src="{{ url_for('static', filename=game.image_path) }}" class="col-game-thumb" alt="{{ game.title }}">
+                            <img src="{{ url_for('static', filename=game.image_path) }}" class="col-game-thumb" alt="{{ game.title }}" onerror="this.onerror=null; this.src='/static/images/default_game.png';">
                             <span class="col-game-title">{{ game.title }}</span>
                             <span class="comic-badge-tag px-2 py-1" style="font-size:0.75rem;">{{ game.genre }}</span>
                             <a href="{{ url_for('game_detail', game_id=game.id) }}" class="btn btn-sm btn-comic btn-light" title="View">
@@ -544,7 +545,7 @@
                         {% for item in ungrouped %}
                         {% set game = item.game %}
                         <div class="col-game-row">
-                            <img src="{{ url_for('static', filename=game.image_path) }}" class="col-game-thumb" alt="{{ game.title }}">
+                            <img src="{{ url_for('static', filename=game.image_path) }}" class="col-game-thumb" alt="{{ game.title }}" onerror="this.onerror=null; this.src='/static/images/default_game.png';">
                             <span class="col-game-title">{{ game.title }}</span>
                             <span class="comic-badge-tag px-2 py-1" style="font-size:0.75rem;">{{ game.genre }}</span>
                             <a href="{{ url_for('game_detail', game_id=game.id) }}" class="btn btn-sm btn-comic btn-light" title="View">

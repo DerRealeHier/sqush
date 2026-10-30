@@ -43,7 +43,7 @@
             </a>
 
             <div class="d-flex align-items-center gap-2 ms-1">
-                <img src="{{ url_for('static', filename=current_user.profile_image) }}" class="hud-avatar" alt="{{ current_user.username }}">
+                <img src="{{ url_for('static', filename=current_user.profile_image) }}" class="hud-avatar" alt="{{ current_user.username }}" onerror="this.onerror=null; this.src=\'/static/avatars/default.png\';">
                 <div class="d-flex flex-column">
                     <a href="{{ url_for('profile', username=current_user.username) }}" class="hud-username text-decoration-none text-dark fw-bold">
                         {{ current_user.username }}
@@ -58,7 +58,7 @@
                 <i class="bi bi-cart-fill"></i>
                 <span class="hud-count-badge cart-count-badge {% if cart_count == 0 %}d-none{% endif %}">{{ cart_count }}</span>
             </a>
-            <a href="/login" class="NavBar">LOGIN</a>
+            <a href="/login" class="hud-icon-btn" title="Login"><i class="bi bi-box-arrow-in-right"></i></a>
             {% endif %}
         </div>
     </div>
@@ -127,7 +127,7 @@
                    data-user-id="{{ conv.user.id }}"
                    data-username="{{ conv.user.username }}">
                     <div class="d-flex align-items-center gap-2">
-                        <img src="{{ url_for('static', filename=conv.user.profile_image) }}" alt="{{ conv.user.username }}" class="conversation-avatar rounded-circle" style="width: 36px; height: 36px; object-fit: cover;">
+                        <img src="{{ url_for('static', filename=conv.user.profile_image) }}" alt="{{ conv.user.username }}" class="conversation-avatar rounded-circle" style="width: 36px; height: 36px; object-fit: cover;" onerror="this.onerror=null; this.src='/static/avatars/default.png';">
                         <div class="conversation-info flex-grow-1">
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="conversation-username fw-bold">{{ conv.user.username }}</span>
@@ -164,7 +164,7 @@
                 <!-- Thread Header -->
                 <div class="thread-header d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
                     <div class="d-flex align-items-center gap-2">
-                        <img src="{{ url_for('static', filename=active_partner.profile_image) }}" alt="{{ active_partner.username }}" class="rounded-circle" style="width: 44px; height: 44px; object-fit: cover;">
+                        <img src="{{ url_for('static', filename=active_partner.profile_image) }}" alt="{{ active_partner.username }}" class="rounded-circle" style="width: 44px; height: 44px; object-fit: cover;" onerror="this.onerror=null; this.src='/static/avatars/default.png';">
                         <div>
                             <a href="{{ url_for('profile', username=active_partner.username) }}" class="fw-bold text-decoration-none">
                                 {{ active_partner.username }}
@@ -460,7 +460,7 @@
                             <div class="list-group-item d-flex align-items-center justify-content-between p-2 picker-item-row" data-title="{{ g.title|lower }}">
                                 <div class="d-flex align-items-center gap-2 overflow-hidden">
                                     {% if g.image_path %}
-                                    <img src="{{ url_for('static', filename=g.image_path) }}" alt="{{ g.title }}" class="rounded" style="width: 38px; height: 38px; object-fit: cover; border: 1px solid #000;">
+                                    <img src="{{ url_for('static', filename=g.image_path) }}" alt="{{ g.title }}" class="rounded" style="width: 38px; height: 38px; object-fit: cover; border: 1px solid #000;" onerror="this.onerror=null; this.src='/static/images/default_game.png';">
                                     {% else %}
                                     <div class="bg-secondary rounded d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; border: 1px solid #000;">
                                         <i class="bi bi-controller text-white"></i>
@@ -491,7 +491,7 @@
                             <div class="list-group-item d-flex align-items-center justify-content-between p-2 picker-item-row" data-title="{{ b.title|lower }}">
                                 <div class="d-flex align-items-center gap-2 overflow-hidden">
                                     {% if b.image_path %}
-                                    <img src="{{ url_for('static', filename=b.image_path) }}" alt="{{ b.title }}" class="rounded" style="width: 38px; height: 38px; object-fit: cover; border: 1px solid #000;">
+                                    <img src="{{ url_for('static', filename=b.image_path) }}" alt="{{ b.title }}" class="rounded" style="width: 38px; height: 38px; object-fit: cover; border: 1px solid #000;" onerror="this.onerror=null; this.src='/static/images/default_game.png';">
                                     {% else %}
                                     <div class="bg-warning rounded d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; border: 1px solid #000;">
                                         <i class="bi bi-box-seam-fill text-dark"></i>

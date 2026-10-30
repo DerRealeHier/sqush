@@ -373,7 +373,7 @@
             </a>
 
             <div class="d-flex align-items-center gap-2 ms-1">
-                <img src="{{ url_for('static', filename=current_user.profile_image) }}" class="hud-avatar" alt="{{ current_user.username }}">
+                <img src="{{ url_for('static', filename=current_user.profile_image) }}" class="hud-avatar" alt="{{ current_user.username }}" onerror="this.onerror=null; this.src=\'/static/avatars/default.png\';">
                 <div class="d-flex flex-column">
                     <a href="{{ url_for('profile', username=current_user.username) }}" class="hud-username text-decoration-none text-dark fw-bold">
                         {{ current_user.username }}

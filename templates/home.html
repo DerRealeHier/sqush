@@ -45,7 +45,7 @@
             </a>
 
             <div class="d-flex align-items-center gap-2 ms-1">
-                <img src="{{ url_for('static', filename=current_user.profile_image) }}" class="hud-avatar" alt="{{ current_user.username }}">
+                <img src="{{ url_for('static', filename=current_user.profile_image) }}" class="hud-avatar" alt="{{ current_user.username }}" onerror="this.onerror=null; this.src='/static/avatars/default.png';">
                 <div class="d-flex flex-column">
                     <a href="{{ url_for('profile', username=current_user.username) }}" class="hud-username text-decoration-none text-dark fw-bold">
                         {{ current_user.username }}
@@ -60,7 +60,7 @@
                 <i class="bi bi-cart-fill"></i>
                 <span class="hud-count-badge cart-count-badge {% if cart_count == 0 %}d-none{% endif %}">{{ cart_count }}</span>
             </a>
-            <a href="/login" class="NavBar">LOGIN</a>
+            <a href="/login" class="hud-icon-btn" title="Login"><i class="bi bi-box-arrow-in-right"></i></a>
             {% endif %}
         </div>
     </div>
@@ -153,7 +153,7 @@
                     {% endif %}
                     {% endif %}
                     <a href="{{ url_for('game_detail', game_id=game.id) }}" class="text-decoration-none">
-                        <img src="{{ game.image_path | asset_v }}" alt="{{ game.title }}" class="game-cover-img" loading="lazy">
+                        <img src="{{ game.image_path | asset_v }}" alt="{{ game.title }}" class="game-cover-img" loading="lazy" onerror="this.onerror=null; this.src='/static/images/default_game.png';">
                     </a>
                 </div>
                 <div class="p-4 text-center">
@@ -175,6 +175,7 @@
     </div>
     {% endif %}
 
+    {% if sale_games %}
     <h2 class="home-sale-title text-center mb-5">Hot Deals</h2>
 
     <div class="row g-5" id="gamesGrid">
@@ -199,7 +200,7 @@
                     {% endif %}
                     {% endif %}
                     <a href="{{ url_for('game_detail', game_id=game.id) }}" class="text-decoration-none">
-                        <img src="{{ game.image_path | asset_v }}" alt="{{ game.title }}" class="game-cover-img" loading="lazy">
+                        <img src="{{ game.image_path | asset_v }}" alt="{{ game.title }}" class="game-cover-img" loading="lazy" onerror="this.onerror=null; this.src='/static/images/default_game.png';">
                     </a>
                 </div>
                 <div class="p-4 text-center">
@@ -220,15 +221,75 @@
                 </div>
             </div>
         </div>
-        {% else %}
-        <div class="col-12 text-center" id="noGamesMessage">
-            <p class="comic-auth-box d-inline-block fs-3 msg-yellow">NO GAMES ON SALE.</p>
+        {% endfor %}
+        <div class="col-12 text-center d-none" id="noMatchMessage">
+            <p class="comic-auth-box d-inline-block fs-3 msg-pink">NO MATCH FOUND!</p>
+        </div>
+    </div>
+    {% elif popular_games %}
+    <h2 class="home-sale-title text-center mb-5">Featured &amp; Popular Games</h2>
+
+    <div class="row g-5" id="gamesGrid">
+        {% for game in popular_games %}
+        <div class="col-md-4 game-item" data-title="{{ game.title.lower() }}">
+            <div class="home-sale-card" data-video-type="{% if game.video_path %}{% if game.video_path.startswith('youtube:') %}youtube{% else %}local{% endif %}{% else %}none{% endif %}" data-yt-id="yt-home-{{ game.id if game.id else loop.index0 }}">
+                {% if game.is_on_sale and game.discount_percent > 0 %}
+                <span class="discount-badge">-{{ game.discount_percent }}%</span>
+                {% endif %}
+                {% if current_user.is_authenticated %}
+                <button class="wishlist-btn card-overlay {% if game.id in wishlist_ids %}active{% endif %}"
+                        data-game-id="{{ game.id }}"
+                        title="Add to Wishlist">
+                    <i class="bi {% if game.id in wishlist_ids %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+                </button>
+                {% endif %}
+                <div class="home-card-img-wrapper">
+                    {% if game.video_path %}
+                    {% if game.video_path.startswith('youtube:') %}
+                    {% set yt_id = game.video_path[8:] %}
+                    <div class="game-video-slot" data-video-type="youtube" data-yt-id="{{ yt_id }}"></div>
+                    {% else %}
+                    <video class="game-video" data-src="{{ url_for('static', filename=game.video_path) }}" preload="none" loop muted playsinline></video>
+                    {% endif %}
+                    {% endif %}
+                    <a href="{{ url_for('game_detail', game_id=game.id) }}" class="text-decoration-none">
+                        <img src="{{ game.image_path | asset_v }}" alt="{{ game.title }}" class="game-cover-img" loading="lazy" onerror="this.onerror=null; this.src='/static/images/default_game.png';">
+                    </a>
+                </div>
+                <div class="p-4 text-center">
+                    <h3 class="comic-card-title mb-3">{{ game.title }}</h3>
+                    <div class="my-3">
+                        {% if game.is_on_sale and game.discount_percent > 0 %}
+                        <span class="text-muted text-decoration-line-through me-2 fw-bold price-strikethrough">{{ "%.2f"|format(game.price) }}€</span>
+                        {% endif %}
+                        <span class="comic-price">{{ "%.2f"|format(game.display_price) }}€</span>
+                    </div>
+                    <div class="mb-2">
+                        <span class="view-count-badge">{{ game.view_count }} Views</span>
+                    </div>
+                    <div class="d-flex justify-content-center gap-2 mt-2"><a href="{{ url_for('game_detail', game_id=game.id) }}" class="btn comic-btn-store w-50">Buy!</a><button class="btn comic-btn-store cart-btn w-50 {% if game.id in cart_ids %}active{% endif %}" data-game-id="{{ game.id }}" title="Toggle Cart"><i class="bi {% if game.id in cart_ids %}bi-cart-fill{% else %}bi-cart-plus{% endif %}"></i> Cart</button></div>
+                </div>
+            </div>
         </div>
         {% endfor %}
         <div class="col-12 text-center d-none" id="noMatchMessage">
             <p class="comic-auth-box d-inline-block fs-3 msg-pink">NO MATCH FOUND!</p>
         </div>
     </div>
+    <div class="text-center mt-5">
+        <a href="{{ url_for('main.store_front') }}" class="btn comic-btn-store px-4 py-2 fs-4">EXPLORE FULL STORE <i class="bi bi-arrow-right"></i></a>
+    </div>
+    {% else %}
+    <h2 class="home-sale-title text-center mb-5">Hot Deals</h2>
+    <div class="row g-5" id="gamesGrid">
+        <div class="col-12 text-center" id="noGamesMessage">
+            <p class="comic-auth-box d-inline-block fs-3 msg-yellow">NO GAMES ON SALE.</p>
+        </div>
+        <div class="col-12 text-center d-none" id="noMatchMessage">
+            <p class="comic-auth-box d-inline-block fs-3 msg-pink">NO MATCH FOUND!</p>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 {% include "demo_footer.html" %}

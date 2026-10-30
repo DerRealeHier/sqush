@@ -48,8 +48,10 @@
     document.addEventListener('DOMContentLoaded', () => {
         applyTheme();
 
-        const userHud = document.querySelector('.user-hud');
-        if (userHud && !document.getElementById('dayNightToggle')) {
+        const hudTarget = document.querySelector('.user-hud') 
+            || document.querySelector('nav .hud-icon-btn')?.parentElement 
+            || document.querySelector('.comic-auth-box')?.parentElement;
+        if (hudTarget && !document.getElementById('dayNightToggle')) {
             const toggleBtn = document.createElement('button');
             toggleBtn.id = 'dayNightToggle';
             toggleBtn.type = 'button';
@@ -61,7 +63,7 @@
                 localStorage.setItem('sqush_theme_mode', currentlyDay ? 'night' : 'day');
                 applyTheme();
             });
-            userHud.prepend(toggleBtn);
+            hudTarget.prepend(toggleBtn);
             applyTheme();
         }
     });

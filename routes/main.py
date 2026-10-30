@@ -11,6 +11,7 @@ from services.game_service import (
     get_recommended_games,
     update_daily_stats,
     check_sales_expiry,
+    get_popular_games,
 )
 import config
 
@@ -68,7 +69,15 @@ def home():
         tags = [t.strip().lower() for t in game.tags.split(",")] if game.tags else []
         game.tags_json = json.dumps(tags)
 
-    return render_template('home.html', sale_games=sale_games, recommended_games=recommended_games)
+    popular_games = []
+    if not sale_games:
+        popular_games = get_popular_games(limit=6)
+        for game in popular_games:
+            game.display_price = calculate_display_price(game)
+            tags = [t.strip().lower() for t in game.tags.split(",")] if game.tags else []
+            game.tags_json = json.dumps(tags)
+
+    return render_template('home.html', sale_games=sale_games, recommended_games=recommended_games, popular_games=popular_games)
 
 
 #Store Page

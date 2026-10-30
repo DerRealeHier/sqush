@@ -225,7 +225,7 @@
         <div class="cover-row">
             <div class="cover">
                 {% if game.image_path %}
-                <img src="{{ url_for('static', filename=game.image_path) }}" alt="{{ game.title }} cover">
+                <img src="{{ url_for('static', filename=game.image_path) }}" alt="{{ game.title }} cover" onerror="this.onerror=null; this.src='/static/images/default_game.png';">
                 {% else %}
                 <div class="cover-fallback">{{ game.title }}</div>
                 {% endif %}
