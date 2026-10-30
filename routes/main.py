@@ -63,19 +63,21 @@ def home():
         game.display_price = calculate_display_price(game)
 
     # personalized recommendations, only makes sense for logged in folks
-    recommended_games = get_recommended_games(current_user, limit=6)
+    recommended_games = get_recommended_games(current_user, limit=12)
     for game in recommended_games:
         game.display_price = calculate_display_price(game)
         tags = [t.strip().lower() for t in game.tags.split(",")] if game.tags else []
         game.tags_json = json.dumps(tags)
 
-    popular_games = []
-    if not sale_games:
-        popular_games = get_popular_games(limit=6)
-        for game in popular_games:
-            game.display_price = calculate_display_price(game)
-            tags = [t.strip().lower() for t in game.tags.split(",")] if game.tags else []
-            game.tags_json = json.dumps(tags)
+    exclude_ids = {g.id for g in sale_games} | {g.id for g in recommended_games}
+    popular_games = get_popular_games(exclude_ids=exclude_ids, limit=12)
+    if len(popular_games) < 4:
+        popular_games = get_popular_games(limit=12)
+
+    for game in popular_games:
+        game.display_price = calculate_display_price(game)
+        tags = [t.strip().lower() for t in game.tags.split(",")] if game.tags else []
+        game.tags_json = json.dumps(tags)
 
     return render_template('home.html', sale_games=sale_games, recommended_games=recommended_games, popular_games=popular_games)
 

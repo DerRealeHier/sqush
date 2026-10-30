@@ -3303,3 +3303,201 @@ body.bundle-dashboard .bundle-stat-box small {
     border-radius: 0 !important;
     box-shadow: 12px 12px 0px #000 !important;
 }
+
+/* ============================================================
+   SQUSH COMIC CAROUSEL (STEAM-STYLE HORIZONTAL SLIDER)
+   ============================================================ */
+.comic-carousel-section {
+    position: relative;
+    margin-bottom: 4rem;
+}
+
+.comic-carousel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.comic-carousel-nav-hint {
+    font-family: 'Comic Neue', sans-serif;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.95rem;
+    background: rgba(0, 0, 0, 0.45);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 4px 14px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.5px;
+}
+
+.comic-carousel-wrapper {
+    position: relative;
+    padding: 0 4px;
+}
+
+.comic-carousel-track-container {
+    overflow: hidden;
+    padding: 16px 12px 28px 12px;
+    margin: -16px -12px -28px -12px;
+}
+
+.comic-carousel-track {
+    display: flex;
+    gap: 28px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    padding: 4px 6px;
+}
+
+.comic-carousel-track::-webkit-scrollbar {
+    display: none;
+}
+
+.comic-carousel-track.is-dragging {
+    cursor: grabbing;
+    scroll-behavior: auto;
+    scroll-snap-type: none;
+}
+
+.comic-carousel-slide {
+    flex: 0 0 calc((100% - 56px) / 3);
+    min-width: 290px;
+    max-width: 440px;
+    scroll-snap-align: start;
+    box-sizing: border-box;
+    content-visibility: visible !important;
+}
+
+.comic-carousel-slide > .game-card,
+.comic-carousel-slide > .home-sale-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 991px) {
+    .comic-carousel-slide {
+        flex: 0 0 calc((100% - 28px) / 2);
+    }
+}
+
+@media (max-width: 650px) {
+    .comic-carousel-slide {
+        flex: 0 0 86%;
+        min-width: 260px;
+    }
+}
+
+/* Comic Navigation Arrow Buttons */
+.comic-carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: var(--yellow);
+    border: 3.5px solid #000;
+    box-shadow: 4px 4px 0px #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.85rem;
+    color: #000;
+    cursor: pointer;
+    z-index: 30;
+    transition: transform 0.16s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.16s ease, background-color 0.16s ease;
+    outline: none;
+    padding: 0;
+}
+
+.comic-carousel-btn:hover {
+    background: var(--cyan);
+    transform: translateY(-50%) scale(1.15) rotate(-3deg);
+    box-shadow: 6px 6px 0px #000, 9px 9px 0px var(--red);
+    color: #000;
+}
+
+.comic-carousel-btn:active {
+    transform: translateY(-50%) scale(0.95);
+    box-shadow: 2px 2px 0px #000;
+}
+
+.comic-carousel-prev {
+    left: -24px;
+}
+
+.comic-carousel-next {
+    right: -24px;
+}
+
+@media (max-width: 768px) {
+    .comic-carousel-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.4rem;
+    }
+    .comic-carousel-prev {
+        left: -12px;
+    }
+    .comic-carousel-next {
+        right: -12px;
+    }
+}
+
+/* Comic Carousel Indicators / Dots */
+.comic-carousel-indicators {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 1.5rem;
+    padding: 6px 0;
+}
+
+.comic-carousel-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2.5px solid #000;
+    background: rgba(255, 255, 255, 0.25);
+    box-shadow: 2px 2px 0px #000;
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+    transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.comic-carousel-dot:hover {
+    background: var(--cyan);
+    transform: scale(1.2);
+}
+
+.comic-carousel-dot.active {
+    width: 38px;
+    border-radius: 8px;
+    background: var(--yellow);
+    box-shadow: 3px 3px 0px #000, 4px 4px 0px var(--red);
+    transform: scale(1.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .comic-carousel-track {
+        scroll-behavior: auto !important;
+    }
+    .comic-carousel-btn, .comic-carousel-dot {
+        transition: none !important;
+    }
+}

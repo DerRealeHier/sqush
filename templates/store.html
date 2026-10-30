@@ -262,44 +262,62 @@
     {% endwith %}
 
     {% if bundles %}
-    <div class="genre-section mb-5">
-        <h2 class="genre-title mb-4 pb-2 border-bottom border-secondary">
-            <i class="bi bi-fire"></i> EPIC BUNDLES
-        </h2>
-        <div class="row g-4">
-            {% for bundle in bundles %}
-            <div class="col-md-4">
-                <div class="game-card h-100">
-                    {% if bundle.discount_percent > 0 %}
-                    <span class="discount-badge">-{{ bundle.discount_percent }}%</span>
-                    {% endif %}
-                    <div class="game-img-wrapper">
-                        <a href="{{ url_for('bundle_detail', bundle_id=bundle.id) }}">
-                            {% if bundle.image_path %}
-                            <img src="{{ bundle.image_path | asset_v }}" class="game-cover-img" alt="{{ bundle.title }}" onerror="this.onerror=null; this.src='/static/images/default_game.png';">
-                            {% else %}
-                            <div class="bg-secondary w-100 h-100 d-flex align-items-center justify-content-center text-white">No Image</div>
-                            {% endif %}
-                        </a>
-                    </div>
-                    <div class="p-3 text-center">
-                        <h3 class="comic-card-title mb-2">{{ bundle.title }}</h3>
-                        <div class="mb-2">
-                            <span class="view-count-badge">{{ bundle.games|length }} Games</span>
-                        </div>
-                        <div class="my-2">
+    <section class="comic-carousel-section mb-5">
+        <div class="comic-carousel-header">
+            <h2 class="genre-title m-0">
+                <i class="bi bi-fire"></i> EPIC BUNDLES
+            </h2>
+            <div class="comic-carousel-nav-hint d-none d-md-inline-flex">
+                <i class="bi bi-arrow-left-right"></i> Scroll or click arrows to explore
+            </div>
+        </div>
+        <div class="comic-carousel-wrapper" id="storeBundlesCarousel">
+            <button type="button" class="comic-carousel-btn comic-carousel-prev" aria-label="Previous bundles" title="Previous">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <div class="comic-carousel-track-container">
+                <div class="comic-carousel-track" tabindex="0" role="region" aria-label="Epic bundles carousel">
+                    {% for bundle in bundles %}
+                    <div class="comic-carousel-slide">
+                        <div class="game-card h-100 d-flex flex-column justify-content-between">
                             {% if bundle.discount_percent > 0 %}
-                            <span class="text-danger bundle-original-price small me-1">{{ "%.2f"|format(bundle.original_price) }}€</span>
+                            <span class="discount-badge">-{{ bundle.discount_percent }}%</span>
                             {% endif %}
-                            <span class="comic-price">{{ "%.2f"|format(bundle.display_price) }}€</span>
+                            <div class="game-img-wrapper">
+                                <a href="{{ url_for('bundle_detail', bundle_id=bundle.id) }}">
+                                    {% if bundle.image_path %}
+                                    <img src="{{ bundle.image_path | asset_v }}" class="game-cover-img" alt="{{ bundle.title }}" onerror="this.onerror=null; this.src='/static/images/default_game.png';">
+                                    {% else %}
+                                    <div class="bg-secondary w-100 h-100 d-flex align-items-center justify-content-center text-white">No Image</div>
+                                    {% endif %}
+                                </a>
+                            </div>
+                            <div class="p-4 text-center d-flex flex-column justify-content-between flex-grow-1">
+                                <div>
+                                    <h3 class="comic-card-title mb-2">{{ bundle.title }}</h3>
+                                    <div class="mb-2">
+                                        <span class="view-count-badge">{{ bundle.games|length }} Games</span>
+                                    </div>
+                                    <div class="my-2">
+                                        {% if bundle.discount_percent > 0 %}
+                                        <span class="text-danger bundle-original-price small me-1">{{ "%.2f"|format(bundle.original_price) }}€</span>
+                                        {% endif %}
+                                        <span class="comic-price">{{ "%.2f"|format(bundle.display_price) }}€</span>
+                                    </div>
+                                </div>
+                                <a href="{{ url_for('bundle_detail', bundle_id=bundle.id) }}" class="btn comic-btn-store mt-3">View Bundle</a>
+                            </div>
                         </div>
-                        <a href="{{ url_for('bundle_detail', bundle_id=bundle.id) }}" class="btn comic-btn-store mt-2">View Bundle</a>
                     </div>
+                    {% endfor %}
                 </div>
             </div>
-            {% endfor %}
+            <button type="button" class="comic-carousel-btn comic-carousel-next" aria-label="Next bundles" title="Next">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+            <div class="comic-carousel-indicators" role="tablist"></div>
         </div>
-    </div>
+    </section>
     {% endif %}
 
     <div class="filter-panel mb-5">

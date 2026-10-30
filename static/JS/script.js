@@ -458,29 +458,217 @@ document.addEventListener('DOMContentLoaded', () => {
         const centralTimerInterval = setInterval(updateAllTimers, 1000);
     }
 
-    // fast home search in memory so it doesn't lag (:
+    // Steam-style comic horizontal carousels (:
+    function initComicCarousels() {
+        const wrappers = document.querySelectorAll('.comic-carousel-wrapper');
+        if (!wrappers.length) return;
+
+        wrappers.forEach(wrapper => {
+            const track = wrapper.querySelector('.comic-carousel-track');
+            const prevBtn = wrapper.querySelector('.comic-carousel-prev');
+            const nextBtn = wrapper.querySelector('.comic-carousel-next');
+            const indicators = wrapper.querySelector('.comic-carousel-indicators');
+            if (!track) return;
+
+            function getVisibleSlides() {
+                return Array.from(track.querySelectorAll('.comic-carousel-slide')).filter(s => !s.classList.contains('d-none') && s.offsetParent !== null);
+            }
+
+            function getStep() {
+                const firstSlide = track.querySelector('.comic-carousel-slide');
+                const slideWidth = firstSlide ? (firstSlide.offsetWidth + 28) : 320;
+                const visibleWidth = track.clientWidth;
+                if (visibleWidth > 900) {
+                    return slideWidth * 3;
+                } else if (visibleWidth > 600) {
+                    return slideWidth * 2;
+                }
+                return slideWidth;
+            }
+
+            function updateIndicators() {
+                if (!indicators) return;
+                const slides = getVisibleSlides();
+                if (slides.length <= 1) {
+                    indicators.innerHTML = '';
+                    if (prevBtn) prevBtn.style.display = 'none';
+                    if (nextBtn) nextBtn.style.display = 'none';
+                    return;
+                }
+
+                const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+                if (maxScroll <= 15) {
+                    indicators.innerHTML = '';
+                    if (prevBtn) prevBtn.style.display = 'none';
+                    if (nextBtn) nextBtn.style.display = 'none';
+                    return;
+                }
+
+                if (prevBtn) prevBtn.style.display = 'flex';
+                if (nextBtn) nextBtn.style.display = 'flex';
+
+                const pageCount = Math.max(1, Math.ceil(track.scrollWidth / (track.clientWidth || 1)));
+
+                if (indicators.children.length !== pageCount) {
+                    indicators.innerHTML = '';
+                    for (let i = 0; i < pageCount; i++) {
+                        const dot = document.createElement('button');
+                        dot.type = 'button';
+                        dot.className = 'comic-carousel-dot' + (i === 0 ? ' active' : '');
+                        dot.setAttribute('aria-label', `Page ${i + 1}`);
+                        dot.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const targetLeft = Math.min(maxScroll, i * track.clientWidth);
+                            track.scrollTo({ left: targetLeft, behavior: 'smooth' });
+                        });
+                        indicators.appendChild(dot);
+                    }
+                }
+
+                const currentRatio = maxScroll > 0 ? (track.scrollLeft / maxScroll) : 0;
+                const activeIndex = Math.min(pageCount - 1, Math.max(0, Math.round(currentRatio * (pageCount - 1))));
+                Array.from(indicators.children).forEach((dot, idx) => {
+                    dot.classList.toggle('active', idx === activeIndex);
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const step = getStep();
+                    const maxScroll = track.scrollWidth - track.clientWidth - 8;
+                    if (track.scrollLeft >= maxScroll) {
+                        track.scrollTo({ left: 0, behavior: 'smooth' });
+                    } else {
+                        track.scrollBy({ left: step, behavior: 'smooth' });
+                    }
+                });
+            }
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const step = getStep();
+                    if (track.scrollLeft <= 8) {
+                        track.scrollTo({ left: track.scrollWidth, behavior: 'smooth' });
+                    } else {
+                        track.scrollBy({ left: -step, behavior: 'smooth' });
+                    }
+                });
+            }
+
+            track.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    track.scrollBy({ left: getStep(), behavior: 'smooth' });
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    track.scrollBy({ left: -getStep(), behavior: 'smooth' });
+                }
+            });
+
+            // Smooth mouse drag scrolling
+            let isDown = false;
+            let startX = 0;
+            let scrollStart = 0;
+            let dragDistance = 0;
+
+            track.addEventListener('mousedown', (e) => {
+                if (e.target.closest('button, a, input, select, textarea')) return;
+                isDown = true;
+                dragDistance = 0;
+                startX = e.pageX - track.offsetLeft;
+                scrollStart = track.scrollLeft;
+                track.classList.add('is-dragging');
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (!isDown) return;
+                isDown = false;
+                track.classList.remove('is-dragging');
+            });
+
+            track.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                const x = e.pageX - track.offsetLeft;
+                const walk = (x - startX) * 1.4;
+                dragDistance = Math.abs(walk);
+                if (dragDistance > 4) {
+                    e.preventDefault();
+                    track.scrollLeft = scrollStart - walk;
+                }
+            });
+
+            track.addEventListener('click', (e) => {
+                if (dragDistance > 6) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }, true);
+
+            let scrollTimer = null;
+            track.addEventListener('scroll', () => {
+                clearTimeout(scrollTimer);
+                scrollTimer = setTimeout(updateIndicators, 60);
+            }, { passive: true });
+
+            track._updateCarousel = updateIndicators;
+            updateIndicators();
+        });
+
+        window.addEventListener('resize', () => {
+            document.querySelectorAll('.comic-carousel-track').forEach(t => {
+                if (t._updateCarousel) t._updateCarousel();
+            });
+        });
+    }
+
+    initComicCarousels();
+
+    // Fast home search across all carousel shelves (:
     const gameSearch = document.getElementById('gameSearch');
     if (gameSearch) {
-        const homeItems = Array.from(document.querySelectorAll('#gamesGrid .game-item')).map(item => ({
+        const homeSections = Array.from(document.querySelectorAll('.comic-carousel-section'));
+        const homeItems = Array.from(document.querySelectorAll('.comic-carousel-section .game-item, #gamesGrid .game-item, #recommendedGrid .game-item, #popularGrid .game-item')).map(item => ({
             el: item,
+            section: item.closest('.comic-carousel-section'),
             title: (item.getAttribute('data-title') || '').toLowerCase(),
         }));
         const noMatchMsg = document.getElementById('noMatchMessage');
 
         function runGameSearch() {
             const query = gameSearch.value.toLowerCase().trim();
-            let visibleCount = 0;
+            let totalVisible = 0;
+            const sectionCounts = new Map();
+
             homeItems.forEach(item => {
                 const match = !query || item.title.includes(query);
                 if (match) {
                     item.el.classList.remove('d-none');
-                    visibleCount++;
+                    totalVisible++;
+                    if (item.section) {
+                        sectionCounts.set(item.section, (sectionCounts.get(item.section) || 0) + 1);
+                    }
                 } else {
                     item.el.classList.add('d-none');
                 }
             });
+
+            homeSections.forEach(sec => {
+                const count = sectionCounts.get(sec) || 0;
+                if (query && count === 0) {
+                    sec.classList.add('d-none');
+                } else {
+                    sec.classList.remove('d-none');
+                }
+                const track = sec.querySelector('.comic-carousel-track');
+                if (track && track._updateCarousel) {
+                    track._updateCarousel();
+                }
+            });
+
             if (noMatchMsg) {
-                if (visibleCount === 0 && homeItems.length > 0) {
+                if (totalVisible === 0 && homeItems.length > 0) {
                     noMatchMsg.classList.remove('d-none');
                 } else {
                     noMatchMsg.classList.add('d-none');
