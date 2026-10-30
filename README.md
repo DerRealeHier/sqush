@@ -97,7 +97,7 @@ flask db upgrade
 - **Hack Club** OAuth login.
 - **Flask** and SQLAlchemy for the backend
 - **Stripe** for paying
-- **Gemini** for making test interactions. All of the Interactions on thi platform are written by Gemini (for now) One friend did something too. You will find him.
+- **Gemini** for making test interactions. Nearly all of the Interactions on this platform are written by Gemini.
 
 ---
 
