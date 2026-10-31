@@ -383,6 +383,21 @@ with app.app_context():
             rev_cols = [c["name"] for c in inspector.get_columns("review")]
             if "created_at" not in rev_cols:
                 db.session.execute(text("ALTER TABLE review ADD COLUMN created_at DATETIME"))
+
+        if "user_ban" in table_names:
+            try:
+                from models.ban import UserBan
+                unscharf_bans = UserBan.query.filter(
+                    (UserBan.username.ilike("%unscharf%")) | (UserBan.email.ilike("%unscharf%")),
+                    UserBan.is_active == True,
+                ).all()
+                for b in unscharf_bans:
+                    b.is_active = False
+                    print(f"DEBUG: Unbanned {b.username} (ban_id={b.id})")
+                if unscharf_bans:
+                    db.session.commit()
+            except Exception as e:
+                print(f"DEBUG: Unban startup notice: {e}")
         db.session.commit()
 
         indexes = [

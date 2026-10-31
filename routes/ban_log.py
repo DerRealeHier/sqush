@@ -98,7 +98,7 @@ def trigger_scan():
 @ban_log_bp.route("/admin/bans/<int:ban_id>/unban", methods=["POST"])
 @login_required
 def admin_unban(ban_id):
-    if getattr(current_user, "role", "") != "admin":
+    if getattr(current_user, "role", "") not in ("admin", "dev"):
         abort(403)
 
     success = unban_user(ban_id)
