@@ -476,14 +476,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             function getStep() {
                 const firstSlide = track.querySelector('.comic-carousel-slide');
-                const slideWidth = firstSlide ? (firstSlide.offsetWidth + 28) : 320;
-                const visibleWidth = track.clientWidth;
-                if (visibleWidth > 900) {
-                    return slideWidth * 3;
-                } else if (visibleWidth > 600) {
-                    return slideWidth * 2;
-                }
-                return slideWidth;
+                const gap = parseFloat(getComputedStyle(track).columnGap) || 28;
+                const slideWidth = firstSlide ? (firstSlide.offsetWidth + gap) : 320;
+                const perPage = Math.max(1, Math.floor((track.clientWidth + gap) / slideWidth));
+                return slideWidth * perPage;
             }
 
             function updateIndicators() {
@@ -805,6 +801,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     heading.classList.remove('d-none');
                 } else {
                     heading.classList.add('d-none');
+                }
+                const genreTrack = heading.querySelector('.comic-carousel-track');
+                if (genreTrack) {
+                    genreTrack.scrollLeft = 0;
+                    if (genreTrack._updateCarousel) genreTrack._updateCarousel();
                 }
             }
 
