@@ -1140,3 +1140,168 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 });
+
+
+// =========================================================================
+// Comic-Style Cross-Document & Directional Page Transitions (:
+// =========================================================================
+(function initComicPageTransitions() {
+    const ROUTE_ORDER = [
+        '/',
+        '/store',
+        '/bundles',
+        '/community',
+        '/bans',
+        '/library',
+        '/wishlist',
+        '/inventory',
+        '/messages',
+        '/notifications',
+        '/updates',
+        '/cart',
+        '/settings'
+    ];
+
+    function getRouteIndex(urlStr) {
+        try {
+            const u = new URL(urlStr, window.location.origin);
+            const path = u.pathname.replace(/\/+$/, '') || '/';
+            const exactIdx = ROUTE_ORDER.indexOf(path);
+            if (exactIdx !== -1) return exactIdx;
+            for (let i = 1; i < ROUTE_ORDER.length; i++) {
+                if (path.startsWith(ROUTE_ORDER[i])) return i;
+            }
+        } catch (_) {}
+        return -1;
+    }
+
+    function computeTransitionDirection(fromEntry, toEntry) {
+        if (!fromEntry?.url || !toEntry?.url) return 'forward';
+        const fromIdx = getRouteIndex(fromEntry.url);
+        const toIdx = getRouteIndex(toEntry.url);
+        if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+            return toIdx > fromIdx ? 'forward' : 'backward';
+        }
+        if (typeof fromEntry.index === 'number' && typeof toEntry.index === 'number' && fromEntry.index !== toEntry.index) {
+            return toEntry.index > fromEntry.index ? 'forward' : 'backward';
+        }
+        return 'forward';
+    }
+
+    function getComicStickerForPath(pathname) {
+        const p = (pathname || '/').toLowerCase();
+        if (p === '/' || p === '/home') return '⚡ ZAP! → HOME!';
+        if (p.startsWith('/store')) return '💥 POW! → STORE!';
+        if (p.startsWith('/community')) return '★ SQUAD! → COMMUNITY!';
+        if (p.startsWith('/library')) return '🎮 READY! → LIBRARY!';
+        if (p.startsWith('/inventory')) return '🃏 LOOT & FORGE!';
+        if (p.startsWith('/messages')) return '💬 KAPOW! → MESSAGES!';
+        if (p.startsWith('/cart')) return '🛒 BOOM! → CART!';
+        if (p.startsWith('/wishlist')) return '❤️ ZING! → WISHLIST!';
+        if (p.startsWith('/settings')) return '⚙️ TWEAK! → SETTINGS!';
+        if (p.startsWith('/bans')) return '🛡️ JUSTICE! → BAN LOG!';
+        if (p.startsWith('/game/')) return '🕹️ ENTER ARCADE!';
+        if (p.startsWith('/profile/')) return '🦸 HERO PROFILE!';
+        return '★ FLIPPING PAGE! ★';
+    }
+
+    // Check support for cross-document view transitions & Navigation API
+    if ('onpagereveal' in window) {
+        window.addEventListener('pagereveal', (e) => {
+            if (e.viewTransition && window.navigation?.activation) {
+                const direction = computeTransitionDirection(
+                    window.navigation.activation.from,
+                    window.navigation.activation.entry
+                );
+                e.viewTransition.types.add(direction);
+            }
+        });
+    }
+
+    let overlayEl = null;
+    let stickerEl = null;
+    let hideTimer = null;
+
+    function ensureOverlay() {
+        if (overlayEl) return overlayEl;
+        overlayEl = document.createElement('div');
+        overlayEl.id = 'comicPageTransitionOverlay';
+        overlayEl.className = 'comic-transition-overlay';
+        overlayEl.setAttribute('aria-hidden', 'true');
+        overlayEl.innerHTML = '<div class="comic-transition-slash"></div><div class="comic-transition-sticker">★ POW! ★</div>';
+        document.body.appendChild(overlayEl);
+        stickerEl = overlayEl.querySelector('.comic-transition-sticker');
+        return overlayEl;
+    }
+
+    window.triggerComicActionBurst = function triggerComicActionBurst(text, durationMs = 340) {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            return;
+        }
+        if (!document.body) return;
+        const overlay = ensureOverlay();
+        if (stickerEl && text) {
+            stickerEl.textContent = text;
+        }
+        if (hideTimer) clearTimeout(hideTimer);
+        overlay.classList.add('is-active');
+        hideTimer = setTimeout(() => {
+            overlay.classList.remove('is-active');
+        }, durationMs);
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            return;
+        }
+
+        // Animate main page container on arrival
+        const mainTarget = document.querySelector('body > .container, body > .container-fluid, main');
+        if (mainTarget) {
+            mainTarget.classList.add('comic-page-enter');
+        }
+
+        // If arrived from a comic link navigation, finish the burst cleanly
+        const pendingSticker = sessionStorage.getItem('sqush_comic_transition_sticker');
+        if (pendingSticker) {
+            sessionStorage.removeItem('sqush_comic_transition_sticker');
+            window.triggerComicActionBurst(pendingSticker, 260);
+        }
+
+        // Intercept internal page navigation links to show the Comic Action Burst
+        document.addEventListener('click', (e) => {
+            if (e.defaultPrevented) return;
+            if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+            const link = e.target.closest('a[href]');
+            if (!link) return;
+            if (link.hasAttribute('download') || link.getAttribute('target') === '_blank') return;
+            if (link.getAttribute('data-bs-toggle') || link.hasAttribute('data-inventory-tab')) return;
+
+            const rawHref = link.getAttribute('href');
+            if (!rawHref || rawHref.startsWith('#') || rawHref.startsWith('javascript:')) return;
+
+            let targetUrl;
+            try {
+                targetUrl = new URL(link.href, window.location.origin);
+            } catch (_) {
+                return;
+            }
+
+            if (targetUrl.origin !== window.location.origin) return;
+            if (targetUrl.pathname === window.location.pathname && targetUrl.search === window.location.search) return;
+
+            const stickerText = getComicStickerForPath(targetUrl.pathname);
+            try {
+                sessionStorage.setItem('sqush_comic_transition_sticker', stickerText);
+            } catch (_) {}
+            window.triggerComicActionBurst(stickerText, 450);
+        });
+    });
+
+    window.addEventListener('pageshow', () => {
+        if (overlayEl) {
+            overlayEl.classList.remove('is-active');
+        }
+    });
+})();

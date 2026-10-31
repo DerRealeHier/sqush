@@ -3573,3 +3573,156 @@ body.bundle-dashboard .bundle-stat-box small {
         transition: none !important;
     }
 }
+
+
+/* ============================================================
+   COMIC BOOK PAGE & DIRECTIONAL VIEW TRANSITIONS
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference) {
+    @view-transition {
+        navigation: auto;
+    }
+
+    .BackgroundImage {
+        view-transition-name: comic-masthead;
+    }
+
+    ::view-transition-group(root) {
+        animation: 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    ::view-transition-old(root) {
+        animation: 0.28s cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
+    }
+
+    ::view-transition-new(root) {
+        animation: 0.34s cubic-bezier(0.175, 0.885, 0.32, 1.15) both slide-from-right;
+    }
+
+    /* MANDATORY: Apply forward animations when the 'forward' type is active */
+    html:active-view-transition-type(forward)::view-transition-old(root) {
+        animation-name: slide-to-left;
+    }
+    html:active-view-transition-type(forward)::view-transition-new(root) {
+        animation-name: slide-from-right;
+    }
+
+    /* MANDATORY: Apply backward animations when the 'backward' type is active */
+    html:active-view-transition-type(backward)::view-transition-old(root) {
+        animation-name: slide-to-right;
+    }
+    html:active-view-transition-type(backward)::view-transition-new(root) {
+        animation-name: slide-from-left;
+    }
+
+    .comic-page-enter {
+        animation: comicPanelEnter 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.15) both;
+    }
+}
+
+/* Mandatory: animate `transform` instead of inset properties for better performance. */
+@keyframes slide-to-left {
+    to {
+        transform: translateX(-16%) rotate(-1.2deg) scale(0.96);
+        opacity: 0;
+    }
+}
+
+@keyframes slide-from-right {
+    from {
+        transform: translateX(16%) rotate(1.2deg) scale(0.96);
+        opacity: 0;
+    }
+}
+
+@keyframes slide-to-right {
+    to {
+        transform: translateX(16%) rotate(1.2deg) scale(0.96);
+        opacity: 0;
+    }
+}
+
+@keyframes slide-from-left {
+    from {
+        transform: translateX(-16%) rotate(-1.2deg) scale(0.96);
+        opacity: 0;
+    }
+}
+
+@keyframes comicPanelEnter {
+    0% {
+        opacity: 0;
+        transform: translateY(14px) scale(0.985) rotate(-0.35deg);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1) rotate(0deg);
+    }
+}
+
+/* Comic Action Slash & Burst Sticker Overlay during Page & Tab Transitions */
+.comic-transition-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 99999;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.16s ease;
+}
+
+.comic-transition-overlay.is-active {
+    opacity: 1;
+}
+
+.comic-transition-slash {
+    position: absolute;
+    inset: -20%;
+    background:
+        radial-gradient(rgba(255, 225, 77, 0.18) 2px, transparent 2px),
+        linear-gradient(135deg, transparent 42%, rgba(13, 13, 18, 0.82) 42%, rgba(13, 13, 18, 0.88) 58%, transparent 58%);
+    background-size: 16px 16px, 100% 100%;
+    transform: translateX(-100%) skewX(-12deg);
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.comic-transition-overlay.is-active .comic-transition-slash {
+    transform: translateX(0%) skewX(-12deg);
+}
+
+.comic-transition-sticker {
+    position: relative;
+    z-index: 2;
+    background: var(--yellow, #ffe14d);
+    color: #000;
+    font-family: 'Bangers', Impact, sans-serif;
+    font-size: 2rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 10px 28px;
+    border: 4px solid #000;
+    box-shadow: 8px 8px 0 #000, 12px 12px 0 var(--red, #ff3b30);
+    transform: scale(0.3) rotate(-8deg);
+    opacity: 0;
+    transition: transform 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.35), opacity 0.15s ease;
+}
+
+.comic-transition-overlay.is-active .comic-transition-sticker {
+    transform: scale(1) rotate(-3deg);
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(root),
+    ::view-transition-old(root),
+    ::view-transition-new(root),
+    .comic-page-enter {
+        animation: none !important;
+    }
+    .comic-transition-overlay {
+        display: none !important;
+    }
+}
