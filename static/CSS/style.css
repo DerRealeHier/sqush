@@ -114,6 +114,12 @@ a {
     z-index: 1;
 }
 
+/* HUD row (notifications, cart, profile) must stack above the Sqush menu and navbar,
+   otherwise its dropdowns open behind them */
+.BackgroundImage > .container-fluid {
+    z-index: 4000;
+}
+
 /* Night Version (Version 1) - active at night or via toggle */
 .theme-night .BackgroundImage,
 body.theme-night .BackgroundImage,
