@@ -134,10 +134,10 @@
                                 {% if conv.user.role == 'dev' %}
                                 <span class="badge bg-danger ms-1">DEV</span>
                                 {% endif %}
-                                <small class="text-muted conversation-time">{% if conv.latest_message %}{{ conv.latest_message.created_at.strftime('%H:%M') }}{% endif %}</small>
+                                <small class="conversation-time">{% if conv.latest_message %}{{ conv.latest_message.created_at.strftime('%H:%M') }}{% endif %}</small>
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="conversation-preview text-muted small text-truncate" style="max-width: 180px;">
+                                <span class="conversation-preview small text-truncate" style="max-width: 180px;">
                                     {% if conv.latest_message %}
                                     {{ conv.latest_message.content }}
                                     {% else %}
@@ -207,7 +207,7 @@
                     {% for msg in messages %}
                     <div class="message-row mb-3 d-flex {% if msg.sender_id == current_user.id %}justify-content-end{% else %}justify-content-start{% endif %}" id="msg-{{ msg.id }}">
                         <div class="message-bubble p-2 rounded {% if msg.sender_id == current_user.id %}bg-primary text-white{% else %}bg-light text-dark border{% endif %}" style="max-width: 75%;">
-                            <div class="message-meta small mb-1 d-flex justify-content-between gap-3 {% if msg.sender_id == current_user.id %}text-white-50{% else %}text-muted{% endif %}">
+                            <div class="message-meta small mb-1 d-flex justify-content-between gap-3 msg-subtle">
                                 <span class="message-sender fw-bold">{{ msg.sender.username }}</span>
                                 <span class="message-time">{{ msg.created_at.strftime('%d.%m %H:%M') }}</span>
                             </div>
@@ -295,20 +295,18 @@
                                 {% endif %}
                             </div>
                             {% else %}
-                            <div class="message-content text-break" style="white-space: pre-wrap; word-break: break-word;">
-                                {{ msg.content | format_chat }}
-                            </div>
+                            <div class="message-content text-break" style="white-space: pre-wrap; word-break: break-word;">{{ msg.content | format_chat }}</div>
                             {% endif %}
 
                             <div class="message-footer mt-1 d-flex justify-content-between align-items-center small">
                                 {% if msg.sender_id == current_user.id %}
-                                <span class="message-status {% if msg.sender_id == current_user.id %}text-white-50{% else %}text-muted{% endif %}">
+                                <span class="message-status msg-subtle">
                                     {% if msg.is_read %}Read{% else %}Sent{% endif %}
                                 </span>
                                 {% endif %}
 
                                 <form action="{{ url_for('messages.delete_message', message_id=msg.id) }}" method="POST" class="d-inline ms-2 delete-message-form" data-message-id="{{ msg.id }}">
-                                    <button type="submit" class="btn btn-link btn-sm p-0 {% if msg.sender_id == current_user.id %}text-white-50{% else %}text-muted{% endif %}" title="Delete message">
+                                    <button type="submit" class="btn btn-link btn-sm p-0 msg-subtle" title="Delete message">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
@@ -336,8 +334,8 @@
                     {% endif %}
 
                     <div class="d-flex align-items-center justify-content-between mb-2">
-                        <small class="text-muted"><i class="bi bi-keyboard me-1"></i><strong>Enter</strong> to send, <strong>Shift+Enter</strong> for line break</small>
-                        <button type="button" class="btn btn-sm btn-outline-dark fw-bold" data-bs-toggle="modal" data-bs-target="#linkGameBundleModal" style="border: 2px solid #000; font-family:'Bangers',sans-serif; letter-spacing:0.5px;">
+                        <small class="compose-hint"><i class="bi bi-keyboard me-1"></i><strong>Enter</strong> to send, <strong>Shift+Enter</strong> for line break</small>
+                        <button type="button" class="btn btn-sm btn-link-game fw-bold" data-bs-toggle="modal" data-bs-target="#linkGameBundleModal">
                             <i class="bi bi-link-45deg text-primary"></i> LINK GAME / BUNDLE
                         </button>
                     </div>
@@ -350,7 +348,7 @@
             </div>
             {% else %}
             <!-- No Conversation Selected State -->
-            <div class="no-active-chat border p-5 rounded text-center text-muted">
+            <div class="no-active-chat border p-5 rounded text-center">
                 <h3>Your Messages</h3>
                 <p>Select a conversation from the left or type a username to start a new chat with any user or developer.</p>
             </div>
@@ -744,23 +742,21 @@
             }
 
             const statusHtml = isSelf
-                ? '<span class="message-status text-white-50">' + (data.is_read ? 'Read' : 'Sent') + '</span>'
+                ? '<span class="message-status msg-subtle">' + (data.is_read ? 'Read' : 'Sent') + '</span>'
                 : '';
 
             row.innerHTML =
                 '<div class="message-bubble p-2 rounded ' + (isSelf ? 'bg-primary text-white' : 'bg-light text-dark border') + '" style="max-width: 75%;">' +
-                    '<div class="message-meta small mb-1 d-flex justify-content-between gap-3 ' + (isSelf ? 'text-white-50' : 'text-muted') + '">' +
+                    '<div class="message-meta small mb-1 d-flex justify-content-between gap-3 ' + 'msg-subtle' + '">' +
                         '<span class="message-sender fw-bold">' + escapeHtml(data.sender_username) + '</span>' +
                         '<span class="message-time">' + escapeHtml(data.created_at || data.time) + '</span>' +
                     '</div>' +
                     gameHtml +
-                    '<div class="message-content text-break" style="white-space: pre-wrap; word-break: break-word;">' +
-                        formatChatContent(data.content) +
-                    '</div>' +
+                    '<div class="message-content text-break" style="white-space: pre-wrap; word-break: break-word;">' + formatChatContent(data.content) + '</div>' +
                     '<div class="message-footer mt-1 d-flex justify-content-between align-items-center small">' +
                         statusHtml +
                         '<form action="/messages/delete/' + data.id + '" method="POST" class="d-inline ms-2 delete-message-form" data-message-id="' + data.id + '">' +
-                            '<button type="submit" class="btn btn-link btn-sm p-0 ' + (isSelf ? 'text-white-50' : 'text-muted') + '" title="Delete message">' +
+                            '<button type="submit" class="btn btn-link btn-sm p-0 ' + 'msg-subtle' + '" title="Delete message">' +
                                 '<i class="bi bi-trash"></i>' +
                             '</button>' +
                         '</form>' +
